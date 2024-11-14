@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tarot AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Tarot AI</h1>
+        
+        <div class="input-section">
+            <textarea 
+                id="context" 
+                placeholder="What's on your mind? Questions? Concerns?"
+                rows="4"
+            ></textarea>
+            <div class="button-container">
+                <button id="drawCard" onclick="getReading()">Choose a Card 🔮</button>
+            </div>
+            <!-- Remove 'hidden' class to show shuffling text by default -->
+            <div id="loading">
+                <div class="shuffling-text">Shuffling cards...</div>
+                <!-- Card container starts hidden -->
+                <div class="card-container hidden">
+                    <img class="card-back" src="/static/card-back.jpg" alt="Tarot card back">
+                </div>
+            </div>
+        </div>
+
+        
+
+        <div id="reading" class="hidden">
+            <h2 id="cardName"></h2>
+            <div class="card-image">
+                <img id="cardImage" alt="Tarot card" loading="lazy">
+            </div>
+            <div id="interpretation"></div>
+        </div>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
