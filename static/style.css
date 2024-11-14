@@ -19,8 +19,18 @@ body {
   margin: 10px;
 }
 
+.page {
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+.page.hidden {
+  display: none;
+  opacity: 0;
+}
+
 /* Center title */
-h1 {
+h1, h2 {
   text-align: center;
   font-weight: 500;
   color: #333;
@@ -80,13 +90,23 @@ button:disabled {
   transform: none;
 }
 
-/* Loading state */
-#loading {
+/* Shuffling and consulting text */
+.shuffling-text, .consulting-text {
+  opacity: 0.8;
+  animation: fadeInOut 1.5s infinite;
+  font-size: 16px;
   text-align: center;
-  padding: 20px;
   color: #666;
+  margin-bottom: 20px;
 }
 
+@keyframes fadeInOut {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+/* Card container styles */
 .card-container {
   width: 100%;
   display: flex;
@@ -109,30 +129,7 @@ button:disabled {
   transform: rotateY(90deg);
 }
 
-.shuffling-text {
-  opacity: 0.8;
-  animation: fadeInOut 1.5s infinite;
-  font-size: 16px;
-}
-
-@keyframes fadeInOut {
-  0% { opacity: 0.4; }
-  50% { opacity: 1; }
-  100% { opacity: 0.4; }
-}
-
-/* Reading section */
-#reading {
-  margin-top: 30px;
-}
-
-#cardName {
-  text-align: center;
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: #333;
-}
-
+/* Card image styles */
 .card-image {
   width: 100%;
   display: flex;
@@ -147,7 +144,7 @@ button:disabled {
   max-height: 70vh;
   border-radius: 15px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.15);
-  display: none; /* Hide until loaded */
+  display: none;
   transition: transform 0.5s ease;
 }
 
@@ -168,10 +165,6 @@ button:disabled {
   word-wrap: break-word;
 }
 
-.hidden {
-  display: none;
-}
-
 /* Mobile optimizations */
 @media (max-width: 480px) {
   .container {
@@ -180,7 +173,7 @@ button:disabled {
     border-radius: 0;
   }
 
-  h1 {
+  h1, h2 {
     font-size: 24px;
     margin-bottom: 20px;
   }
@@ -193,10 +186,6 @@ button:disabled {
   button {
     width: 80%;
     padding: 12px 20px;
-  }
-
-  #cardName {
-    font-size: 20px;
   }
 
   #interpretation {
