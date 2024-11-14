@@ -17,7 +17,7 @@ app = FastAPI()
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Card definitions with filenames
+# Pre-compute all card mappings
 major_arcana_map = {
     'The Fool': '00-TheFool.jpg',
     'The Magician': '01-TheMagician.jpg',
@@ -43,40 +43,50 @@ major_arcana_map = {
     'The World': '21-TheWorld.jpg'
 }
 
+# Pre-compute number mappings
+number_map = {
+    'Ace': '01', 'Two': '02', 'Three': '03', 'Four': '04', 'Five': '05',
+    'Six': '06', 'Seven': '07', 'Eight': '08', 'Nine': '09', 'Ten': '10',
+    'Page': '11', 'Knight': '12', 'Queen': '13', 'King': '14'
+}
+
 suits = ['Wands', 'Cups', 'Swords', 'Pentacles']
 numbers = ['Ace', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
 courts = ['Page', 'Knight', 'Queen', 'King']
 
-def get_minor_filename(card_name):
-    # Split "Five of Cups" into "Five" and "Cups"
-    value, suit = card_name.split(' of ')
+# Pre-compute minor arcana mappings
+minor_arcana_map = {}
+for suit in suits:
+    for value in numbers + courts:
+        card_name = f"{value} of {suit}"
+        filename = f"{suit}{number_map[value]}.jpg"
+        minor_arcana_map[card_name] = filename
 
-    # Convert word numbers to digits
-    number_map = {
-        'Ace': '01', 'Two': '02', 'Three': '03', 'Four': '04', 'Five': '05',
-        'Six': '06', 'Seven': '07', 'Eight': '08', 'Nine': '09', 'Ten': '10',
-        'Page': '11', 'Knight': '12', 'Queen': '13', 'King': '14'
-    }
+# Combine all card names for random selection
+all_cards = list(major_arcana_map.keys()) + list(minor_arcana_map.keys())
 
-    num = number_map[value]
-    return f"{suit}{num}.jpg"
-
-# Generate minor_arcana list
-minor_arcana = [f"{num} of {suit}" for suit in suits for num in numbers + courts]
+# Cache for encoded images
+card_image_cache = {}
 
 def get_card_image(card_name: str) -> str:
+    # Check cache first
+    if card_name in card_image_cache:
+        return card_image_cache[card_name]
+
     try:
-        if card_name in major_arcana_map:
-            filename = major_arcana_map[card_name]
-        else:
-            filename = get_minor_filename(card_name)
+        # Get filename from pre-computed mappings
+        filename = major_arcana_map.get(card_name) or minor_arcana_map.get(card_name)
+        if not filename:
+            raise ValueError(f"Invalid card name: {card_name}")
 
         image_path = f'static/cards/{filename}'
-        print(f"Looking for image: {image_path}")
+        print(f"Loading image: {image_path}")
 
         if os.path.exists(image_path):
             with open(image_path, 'rb') as img_file:
-                return base64.b64encode(img_file.read()).decode()
+                encoded = base64.b64encode(img_file.read()).decode()
+                card_image_cache[card_name] = encoded
+                return encoded
         else:
             raise FileNotFoundError(f"Image not found: {image_path}")
 
@@ -93,11 +103,11 @@ async def get_reading(request: ReadingRequest):
     try:
         print("Starting reading request with context:", request.context)
 
-        # Pick random card
-        card = random.choice(list(major_arcana_map.keys()) + minor_arcana)
+        # Pick random card from pre-computed list
+        card = random.choice(all_cards)
         print("Selected card:", card)
 
-        # Get image from local storage
+        # Get image from cache or load it
         print("Loading card image...")
         img_data = get_card_image(card)
         print("Image loaded successfully")
