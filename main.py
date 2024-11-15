@@ -5,12 +5,24 @@ from fastapi.responses import FileResponse
 import random
 from openai import OpenAI
 import os
+from dotenv import load_dotenv
 import base64
 from pydantic import BaseModel
+
+# Load environment variables
+load_dotenv()
 
 # Add model for request validation
 class ReadingRequest(BaseModel):
     context: str = ""  # Default empty string
+
+# Check for API key early
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables. Check your .env file.")
+
+# Initialize OpenAI client once
+client = OpenAI(api_key=api_key)
 
 app = FastAPI()
 
@@ -115,7 +127,6 @@ async def get_reading(request: ReadingRequest):
         # Get interpretation
         try:
             print("Getting interpretation from OpenAI...")
-            client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
             interpretation = client.chat.completions.create(
                 model="gpt-4",
                 messages=[{
