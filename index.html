@@ -10,11 +10,12 @@
 <body>
     <!-- First Page: Input -->
     <div class="container page" id="input-page">
-        <h1>Tarot AI</h1>
+        <h1>TAROT AI</h1>
+        <h2 class="subtitle">Your tarot reading reflects what's on your mind.<br>For the deepest insights, enter a thought or question.<br>Otherwise, simply choose a card.</h2>
         <div class="input-section">
             <textarea 
                 id="context" 
-                placeholder="Share what's on your mind.&#10;The more intimate, the deeper the interpretation."
+                placeholder=""
                 rows="4"
             ></textarea>
             <div class="shuffling-text">Shuffling cards...</div>
@@ -23,6 +24,7 @@
             </div>
         </div>
     </div>
+
     <!-- Second Page: Reading -->
     <div class="container page hidden" id="reading-page">
         <div class="consulting-text">Consulting the stars...</div>
@@ -30,6 +32,7 @@
             <img class="card-back" src="/static/card-back.jpg" alt="Tarot card back">
         </div>
     </div>
+
     <!-- Third Page: Result -->
     <div class="container page hidden" id="result-page">
         <h2 id="cardName"></h2>
