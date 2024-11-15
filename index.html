@@ -4,25 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tarot AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
     <!-- First Page: Input -->
     <div class="container page" id="input-page">
         <h1>Tarot AI</h1>
-        <div class="shuffling-text">Shuffling cards...</div>
         <div class="input-section">
             <textarea 
                 id="context" 
-                placeholder="What's on your mind? Questions? Concerns?"
+                placeholder="Share what's on your mind.&#10;The more intimate, the deeper the interpretation."
                 rows="4"
             ></textarea>
+            <div class="shuffling-text">Shuffling cards...</div>
             <div class="button-container">
                 <button id="drawCard" onclick="startReading()">Choose a Card 🔮</button>
             </div>
         </div>
     </div>
-
     <!-- Second Page: Reading -->
     <div class="container page hidden" id="reading-page">
         <div class="consulting-text">Consulting the stars...</div>
@@ -30,7 +30,6 @@
             <img class="card-back" src="/static/card-back.jpg" alt="Tarot card back">
         </div>
     </div>
-
     <!-- Third Page: Result -->
     <div class="container page hidden" id="result-page">
         <h2 id="cardName"></h2>

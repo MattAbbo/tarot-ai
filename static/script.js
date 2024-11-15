@@ -27,7 +27,6 @@ function newReading() {
     document.getElementById('cardImage').style.display = 'none';
     const cardBack = document.querySelector('.card-back');
     if (cardBack) cardBack.classList.remove('flipping');
-
     // Return to input page
     showPage('input-page');
 }
@@ -39,7 +38,6 @@ async function getReading() {
     try {
         // Ensure minimum delay for animation
         const minDelay = new Promise(resolve => setTimeout(resolve, 3000));
-
         const [response] = await Promise.all([
             fetch('/reading', {
                 method: 'POST',
@@ -74,7 +72,6 @@ async function getReading() {
             showPage('result-page');
         };
         img.src = data.image_data;
-
     } catch (error) {
         console.error('Error:', error);
         alert('Error getting reading. Please try again.');
