@@ -10,7 +10,7 @@ An AI-powered tarot reading application that combines traditional Rider-Waite-Sm
 - Mobile-responsive design
 
 ## Demo
-[Live Demo]([https://02b33366-89d7-4f71-b992-575a90a82e87-00-3a2ofplg3bx20.spock.replit.dev/])
+https://02b33366-89d7-4f71-b992-575a90a82e87-00-3a2ofplg3bx20.spock.replit.dev/
 
 ## Tech Stack
 - Frontend: HTML, CSS, JavaScript
