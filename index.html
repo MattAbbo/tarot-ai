@@ -6,18 +6,52 @@
     <title>Tarot AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .input-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .mic-button {
+            position: absolute;
+            right: 15px;
+            top: 15px;
+            background: none;
+            border: none;
+            padding: 8px;
+            font-size: 20px;
+            cursor: pointer;
+            animation: none;
+            transition: transform 0.2s ease;
+            color: var(--text-muted);
+        }
+
+        .mic-button:hover {
+            transform: scale(1.1);
+            background: none;
+            box-shadow: none;
+        }
+
+        #recordingStatus {
+            margin-top: -15px;
+        }
+    </style>
 </head>
 <body>
     <!-- First Page: Input -->
     <div class="container page" id="input-page">
         <h1>TAROT AI</h1>
-        <h2 class="subtitle">Your tarot reading reflects what's on your mind.<br>For the deepest insights, enter a thought or question.<br>Otherwise, simply choose a card.</h2>
+        <h2 class="subtitle">The tarot mirrors your mind.<br>For deep insights, enter a thought/question.<br>Otherwise, simply choose a card.</h2>
         <div class="input-section">
-            <textarea 
-                id="context" 
-                placeholder=""
-                rows="4"
-            ></textarea>
+            <div class="input-wrapper">
+                <textarea 
+                    id="context" 
+                    placeholder=""
+                    rows="4"
+                ></textarea>
+                <button id="recordButton" class="mic-button" onclick="toggleRecording()">🎤</button>
+            </div>
+            <div id="recordingStatus" class="shuffling-text" style="display: none;"></div>
             <div class="shuffling-text">Shuffling cards...</div>
             <div class="button-container">
                 <button id="drawCard" onclick="startReading()">Choose a Card 🔮</button>
@@ -44,6 +78,72 @@
             <button onclick="newReading()">New Reading 🔮</button>
         </div>
     </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+
+        async function toggleRecording() {
+    const button = document.getElementById('recordButton');
+    const status = document.getElementById('recordingStatus');
+
+    if (button.textContent === '🎤') {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                await sendAudioForTranscription(audioBlob);
+            };
+
+            mediaRecorder.start();
+            button.textContent = '⏹';
+            button.classList.add('recording');
+            status.textContent = 'Recording...';
+            status.style.display = 'block';
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            status.textContent = 'Error accessing microphone';
+            status.style.display = 'block';
+        }
+    } else {
+        mediaRecorder.stop();
+        button.textContent = '🎤';
+        button.classList.remove('recording');
+        status.textContent = 'Processing...';
+    }
+}
+
+        async function sendAudioForTranscription(audioBlob) {
+            const formData = new FormData();
+            formData.append('audio_file', audioBlob, 'recording.wav');
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Transcription failed');
+
+                const data = await response.json();
+                document.getElementById('context').value = data.transcription;
+                document.getElementById('recordingStatus').textContent = 'Transcription complete';
+                setTimeout(() => {
+                    document.getElementById('recordingStatus').style.display = 'none';
+                }, 2000);
+            } catch (err) {
+                console.error('Error sending audio:', err);
+                document.getElementById('recordingStatus').textContent = 'Error processing audio';
+            }
+        }
+    </script>
     <script src="/static/script.js"></script>
 </body>
 </html>

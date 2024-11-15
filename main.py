@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,6 +8,7 @@ import os
 from dotenv import load_dotenv
 import base64
 from pydantic import BaseModel
+import tempfile
 
 # Load environment variables
 load_dotenv()
@@ -25,6 +26,15 @@ if not api_key:
 client = OpenAI(api_key=api_key)
 
 app = FastAPI()
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -109,6 +119,44 @@ def get_card_image(card_name: str) -> str:
 @app.get("/")
 async def read_root():
     return FileResponse('index.html')
+
+@app.post("/transcribe")
+async def transcribe_audio(audio_file: UploadFile = File(...)):
+    try:
+        print("Received audio file for transcription")
+        
+        # Save the uploaded file temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(audio_file.filename)[1]) as temp_file:
+            content = await audio_file.read()
+            temp_file.write(content)
+            temp_file_path = temp_file.name
+
+        try:
+            # Use OpenAI's Whisper API to transcribe the audio
+            print("Transcribing with Whisper...")
+            with open(temp_file_path, "rb") as audio:
+                transcript = client.audio.transcriptions.create(
+                    model="whisper-1",
+                    file=audio,
+                    response_format="text"
+                )
+            print("Transcription successful")
+
+            # Clean up the temporary file
+            os.unlink(temp_file_path)
+            
+            return {"transcription": transcript}
+
+        except Exception as e:
+            print(f"Transcription error: {str(e)}")
+            # Clean up the temporary file in case of error
+            if os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
+            raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
+
+    except Exception as e:
+        print(f"Error in transcribe_audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/reading")
 async def get_reading(request: ReadingRequest):
