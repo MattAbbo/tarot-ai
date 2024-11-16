@@ -2,148 +2,369 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tarot AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAROT AI</title>
+    <!-- React and ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/style.css">
     <style>
-        .input-wrapper {
-            position: relative;
-            width: 100%;
+        body { 
+            background: #1a1a2e; 
+            margin: 0;
+            min-height: 100vh;
         }
-
-        .mic-button {
-            position: absolute;
-            right: 15px;
-            top: 15px;
-            background: none;
-            border: none;
-            padding: 8px;
-            font-size: 20px;
-            cursor: pointer;
-            animation: none;
-            transition: transform 0.2s ease;
-            color: var(--text-muted);
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
         }
-
-        .mic-button:hover {
-            transform: scale(1.1);
-            background: none;
-            box-shadow: none;
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.4; }
         }
-
-        #recordingStatus {
-            margin-top: -15px;
+        .animate-pulse-custom {
+            animation: pulse 2s infinite;
         }
     </style>
-</head>
-<body>
-    <!-- First Page: Input -->
-    <div class="container page" id="input-page">
-        <h1>TAROT AI</h1>
-        <h2 class="subtitle">The tarot mirrors your mind.<br>For deep insights, enter a thought/question.<br>Otherwise, simply choose a card.</h2>
-        <div class="input-section">
-            <div class="input-wrapper">
-                <textarea 
-                    id="context" 
-                    placeholder=""
-                    rows="4"
-                ></textarea>
-                <button id="recordButton" class="mic-button" onclick="toggleRecording()">🎤</button>
-            </div>
-            <div id="recordingStatus" class="shuffling-text" style="display: none;"></div>
-            <div class="shuffling-text">Shuffling cards...</div>
-            <div class="button-container">
-                <button id="drawCard" onclick="startReading()">Choose a Card 🔮</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Second Page: Reading -->
-    <div class="container page hidden" id="reading-page">
-        <div class="consulting-text">Consulting the stars...</div>
-        <div class="card-container">
-            <img class="card-back" src="/static/card-back.jpg" alt="Tarot card back">
-        </div>
-    </div>
-
-    <!-- Third Page: Result -->
-    <div class="container page hidden" id="result-page">
-        <h2 id="cardName"></h2>
-        <div class="card-image">
-            <img id="cardImage" alt="Tarot card" loading="lazy">
-        </div>
-        <div id="interpretation"></div>
-        <div class="button-container">
-            <button onclick="newReading()">New Reading 🔮</button>
-        </div>
-    </div>
-
     <script>
-        let mediaRecorder;
-        let audioChunks = [];
-
-        async function toggleRecording() {
-    const button = document.getElementById('recordButton');
-    const status = document.getElementById('recordingStatus');
-
-    if (button.textContent === '🎤') {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder = new MediaRecorder(stream);
-            audioChunks = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                audioChunks.push(event.data);
-            };
-
-            mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                await sendAudioForTranscription(audioBlob);
-            };
-
-            mediaRecorder.start();
-            button.textContent = '⏹';
-            button.classList.add('recording');
-            status.textContent = 'Recording...';
-            status.style.display = 'block';
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
-            status.textContent = 'Error accessing microphone';
-            status.style.display = 'block';
-        }
-    } else {
-        mediaRecorder.stop();
-        button.textContent = '🎤';
-        button.classList.remove('recording');
-        status.textContent = 'Processing...';
-    }
-}
-
-        async function sendAudioForTranscription(audioBlob) {
-            const formData = new FormData();
-            formData.append('audio_file', audioBlob, 'recording.wav');
-
-            try {
-                const response = await fetch('/transcribe', {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) throw new Error('Transcription failed');
-
-                const data = await response.json();
-                document.getElementById('context').value = data.transcription;
-                document.getElementById('recordingStatus').textContent = 'Transcription complete';
-                setTimeout(() => {
-                    document.getElementById('recordingStatus').style.display = 'none';
-                }, 2000);
-            } catch (err) {
-                console.error('Error sending audio:', err);
-                document.getElementById('recordingStatus').textContent = 'Error processing audio';
+        // Configure Tailwind
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mystic: {
+                            900: '#1a1a2e',
+                            800: '#232338',
+                            700: '#2d2d45',
+                        },
+                        crystal: {
+                            500: '#9b6dff',
+                            600: '#7e57c2',
+                        }
+                    }
+                }
             }
         }
     </script>
-    <script src="/static/script.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
+        const { Mic, Send, X, Sparkles } = lucide;
+
+        const loadingMessages = [
+            "Consulting the stars...",
+            "Peering through the cosmic veil...",
+            "Aligning with celestial energies...",
+            "Reading ancient symbols...",
+            "Channeling mystic wisdom...",
+            "Decoding ethereal messages...",
+            "Seeking guidance from beyond...",
+            "Unveiling cosmic patterns...",
+            "Drawing from the astral plane...",
+            "Interpreting the threads of fate...",
+            "Divining ancient knowledge...",
+            "Bridging realms of wisdom...",
+            "Awakening timeless insights...",
+            "Exploring the cosmic tapestry...",
+            "Gathering celestial whispers...",
+            "Weaving threads of destiny...",
+            "Traversing mystical pathways...",
+            "Unlocking arcane secrets...",
+            "Harmonizing with universal forces...",
+            "Summoning spiritual guidance..."
+        ];
+
+        function TarotChat() {
+            const [messages, setMessages] = useState([{
+                id: '1',
+                content: "Welcome to Tarot AI.\n\nAsk a question or draw a card for insight into your journey.",
+                type: 'ai'
+            }]);
+            const [input, setInput] = useState('');
+            const [isRecording, setIsRecording] = useState(false);
+            const [recordingTime, setRecordingTime] = useState(0);
+            const [isLoading, setIsLoading] = useState(false);
+
+            const mediaRecorderRef = useRef(null);
+            const timerRef = useRef(null);
+            const scrollRef = useRef(null);
+            const audioChunksRef = useRef([]);
+
+            useEffect(() => {
+                // Create Lucide icons
+                lucide.createIcons();
+                // Scroll to bottom when messages change
+                scrollToBottom();
+            }, [messages]);
+
+            const scrollToBottom = () => {
+                if (scrollRef.current) {
+                    scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const startRecording = async () => {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorderRef.current = mediaRecorder;
+                    audioChunksRef.current = [];
+
+                    mediaRecorder.ondataavailable = (event) => {
+                        audioChunksRef.current.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+                        await handleAudioTranscription(audioBlob);
+                    };
+
+                    setIsRecording(true);
+                    setRecordingTime(0);
+                    mediaRecorder.start();
+
+                    timerRef.current = setInterval(() => {
+                        setRecordingTime(t => t + 1);
+                    }, 1000);
+                } catch (error) {
+                    console.error('Error accessing microphone:', error);
+                }
+            };
+
+            const stopRecording = () => {
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                    mediaRecorderRef.current.stop();
+                    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+                    clearInterval(timerRef.current);
+                    setIsRecording(false);
+                }
+            };
+
+            const cancelRecording = () => {
+                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                    mediaRecorderRef.current.stop();
+                    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+                    clearInterval(timerRef.current);
+                    setIsRecording(false);
+                    audioChunksRef.current = [];
+                }
+            };
+
+            const handleAudioTranscription = async (audioBlob) => {
+                try {
+                    setIsLoading(true);
+                    const formData = new FormData();
+                    formData.append('audio_file', audioBlob, 'recording.wav');
+
+                    const response = await fetch('/transcribe', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error('Transcription failed');
+                    
+                    const data = await response.json();
+                    setInput(data.transcription);
+                } catch (error) {
+                    console.error('Transcription error:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            const handleSendMessage = async () => {
+                if (isLoading) return;
+
+                try {
+                    setIsLoading(true);
+                    const context = input.trim();
+                    
+                    if (context) {
+                        setMessages(prev => [...prev, {
+                            id: Date.now().toString(),
+                            content: context,
+                            type: 'user'
+                        }]);
+                    }
+
+                    setInput('');
+                    setMessages(prev => {
+                        const randomMessage = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
+                        return [...prev, {
+                            id: (Date.now() + 1).toString(),
+                            content: randomMessage,
+                            type: 'ai'
+                        }];
+                    });
+
+                    const response = await fetch('/reading', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ context }),
+                    });
+
+                    if (!response.ok) throw new Error('Reading failed');
+                    
+                    const data = await response.json();
+                    
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        newMessages.pop(); // Remove loading message
+                        return [...newMessages, {
+                            id: Date.now().toString(),
+                            content: data.interpretation,
+                            type: 'card',
+                            card: {
+                                name: data.card_name,
+                                image: data.image_data
+                            }
+                        }];
+                    });
+                } catch (error) {
+                    console.error('Error getting reading:', error);
+                    setMessages(prev => [...prev, {
+                        id: Date.now().toString(),
+                        content: "I apologize, but I couldn't complete the reading. Please try again.",
+                        type: 'ai'
+                    }]);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+
+            return (
+                <div className="flex flex-col h-screen">
+                    {/* Header */}
+                    <header className="flex items-center justify-between p-4 border-b border-purple-900">
+                        <div className="flex items-center gap-2">
+                            <i data-lucide="sparkles" className="w-6 h-6 text-crystal-500"></i>
+                            <h1 className="text-2xl font-bold font-cinzel bg-gradient-to-r from-crystal-500 to-crystal-600 bg-clip-text text-transparent">
+                                TAROT AI
+                            </h1>
+                        </div>
+                    </header>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto p-4">
+                        <div className="max-w-2xl mx-auto space-y-4">
+                            {messages.map((message) => (
+                                <div
+                                    key={message.id}
+                                    className={`flex gap-2 ${
+                                        message.type === 'user' ? 'justify-end' : 'justify-start'
+                                    }`}
+                                >
+                                    <div
+                                        className={`rounded-lg p-4 max-w-[80%] ${
+                                            message.type === 'user'
+                                                ? 'bg-crystal-500'
+                                                : message.type === 'card'
+                                                ? 'bg-mystic-700'
+                                                : 'bg-mystic-800'
+                                        }`}
+                                    >
+                                        {message.card && (
+                                            <div className="mb-4">
+                                                <h3 className="text-xl font-semibold mb-2 text-crystal-500 font-cinzel">
+                                                    {message.card.name}
+                                                </h3>
+                                                <img
+                                                    src={message.card.image}
+                                                    alt={message.card.name}
+                                                    className="rounded-lg mb-2 w-full max-w-[240px] mx-auto shadow-lg"
+                                                />
+                                            </div>
+                                        )}
+                                        <p className="text-sm text-white whitespace-pre-line">{message.content}</p>
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={scrollRef} />
+                        </div>
+                    </div>
+
+                    {/* Input */}
+                    <div className="p-4 border-t border-purple-900">
+                        <div className="max-w-2xl mx-auto">
+                            {isRecording ? (
+                                <div className="flex items-center gap-2 bg-mystic-800 rounded-lg p-2">
+                                    <button
+                                        onClick={cancelRecording}
+                                        className="text-red-500 hover:text-red-600 hover:bg-mystic-700 p-2 rounded-full"
+                                    >
+                                        <i data-lucide="x" className="h-5 w-5"></i>
+                                    </button>
+                                    <div className="flex-1 flex items-center gap-2">
+                                        <div className="flex-1 h-4 bg-mystic-700 rounded-full overflow-hidden">
+                                            <div className="h-full bg-crystal-500 animate-pulse-custom rounded-full"></div>
+                                        </div>
+                                        <span className="text-sm text-gray-400 font-mono">
+                                            {formatTime(recordingTime)}
+                                        </span>
+                                    </div>
+                                    <button
+                                        onClick={stopRecording}
+                                        className="text-crystal-500 hover:text-crystal-600 p-2 rounded-full"
+                                    >
+                                        <span className="block h-3 w-3 bg-current rounded-full"></span>
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2">
+                                    <div className="relative flex-1">
+                                        <input
+                                            type="text"
+                                            className="w-full bg-mystic-800 border-0 rounded-lg p-3 pr-12 text-white placeholder-gray-400 focus:ring-1 focus:ring-crystal-500"
+                                            placeholder="Unveil your destiny, seeker..."
+                                            value={input}
+                                            onChange={(e) => setInput(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
+                                        />
+                                        <button
+                                            onClick={startRecording}
+                                            disabled={isLoading}
+                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 p-2"
+                                        >
+                                            <i data-lucide="mic" className="h-5 w-5"></i>
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={handleSendMessage}
+                                        disabled={isLoading}
+                                        className={`p-3 rounded-lg ${
+                                            isLoading ? 'bg-mystic-700' : 'bg-crystal-500 hover:bg-crystal-600'
+                                        }`}
+                                    >
+                                        <i data-lucide="send" className="h-4 w-4"></i>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TarotChat />);
+    </script>
 </body>
 </html>
