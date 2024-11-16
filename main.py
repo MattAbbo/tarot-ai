@@ -13,9 +13,44 @@ import tempfile
 # Load environment variables
 load_dotenv()
 
+# Add reflection prompts
+REFLECTION_PROMPTS = [
+    "What symbols in this card draw your attention?",
+    "What emotions does this card stir within you?",
+    "What story does this card tell you?",
+    "What hidden messages do you see in the imagery?",
+    "What energies do you feel emanating from this card?",
+    "What details in this card speak directly to you?",
+    "What deeper meaning reveals itself to you?",
+    "What wisdom does this card hold for your situation?",
+    "What patterns or symbols catch your eye?",
+    "What aspects of your life does this card illuminate?",
+    "How does this imagery connect to your inner journey?",
+    "What memories or thoughts surface as you gaze at this card?",
+    "What metaphors in this card resonate with your path?",
+    "How does this card mirror your current experience?",
+    "What secrets does this card whisper to your soul?",
+    "How does this image reflect your deepest questions?",
+    "What personal truth emerges from these symbols?",
+    "How does this card speak to your present moment?",
+    "What unconscious wisdom does this card reveal?",
+    "How does this imagery dance with your intuition?",
+    "What hidden aspects of yourself do you see reflected?",
+    "How does this card challenge your perspective?",
+    "What deeper understanding awaits in these symbols?",
+    "How does this card illuminate your path forward?",
+    "What unspoken message does this card hold for you?",
+    "How does this imagery touch your inner knowing?",
+    "What personal significance emerges from this card?",
+    "How does this card reflect your spiritual journey?",
+    "What subtle energies do you sense in this image?",
+    "What transformative message lies within this card?"
+]
+
 # Add model for request validation
 class ReadingRequest(BaseModel):
     context: str = ""  # Default empty string
+    reflection: str = ""  # Add reflection field
 
 # Check for API key early
 api_key = os.getenv("OPENAI_API_KEY")
@@ -163,48 +198,51 @@ async def get_reading(request: ReadingRequest):
     try:
         print("Starting reading request with context:", request.context)
 
-        # Pick random card from pre-computed list
-        card = random.choice(all_cards)
-        print("Selected card:", card)
-
-        # Get image from cache or load it
-        print("Loading card image...")
-        img_data = get_card_image(card)
-        print("Image loaded successfully")
-
-        # Get interpretation
+        # If no reflection provided, just return the card without interpretation
+        if not request.reflection:
+            card = random.choice(all_cards)
+            img_data = get_card_image(card)
+            reflection_prompt = random.choice(REFLECTION_PROMPTS)
+            
+            return {
+                "card_name": card,
+                "image_data": f"data:image/jpeg;base64,{img_data}",
+                "reflection_prompt": reflection_prompt
+            }
+        
+        # If reflection is provided, generate the interpretation
+        card_name = request.context.split("CARD:")[1].strip() if "CARD:" in request.context else ""
+        
         try:
             print("Getting interpretation from OpenAI...")
             interpretation = client.chat.completions.create(
-                model="gpt-4",
-                messages=[{
-                    "role": "system",
-                    "content": """You are a knowledgeable tarot reader specializing in the Rider-Waite-Smith deck.
-                    IMPORTANT: Keep total response under 1000 characters.
-                    Interpret for the querent's context.
-                    When interpreting, point out max 2 often-overlooked symbolic details in the card's imagery that are particularly relevant to the querent's situation."""
-                }, {
-                    "role": "user",
-                    "content": f"Card drawn: '{card}'. Context from querent: '{request.context}'. Interpret this card specifically relating to their situation, highlighting often overlooked meaningful symbols in the card's artwork."
-                    if request.context else
-                    f"Interpret '{card}', including often-missed details from the Rider-Waite-Smith imagery. KEEP UNDER 1000 CHARACTERS."
-                }],
-                max_tokens=400
-            ).choices[0].message.content
+            model="gpt-4",
+            messages=[{
+                "role": "system",
+                "content": """You are a knowledgeable tarot reader specializing in the Rider-Waite-Smith deck.
+                IMPORTANT: Keep total response under 1000 characters.
+                Consider both the querent's original question AND their personal reflection on the card.
+                When interpreting, reference their insights and add deeper meaning.
+                Point out max 2 often-overlooked symbolic details that relate to their situation."""
+            }, {
+                "role": "user",
+                "content": f"""Original question: {request.context.split('CARD:')[0].strip()}
+                Card drawn: {card_name}
+                Querent's reflection: {request.reflection}
+                
+                Provide an interpretation that builds on their insights and relates to their situation."""
+            }],
+            max_tokens=400
+        ).choices[0].message.content
             print("Got interpretation from OpenAI")
+
+            return {
+                "interpretation": interpretation
+            }
 
         except Exception as e:
             print(f"OpenAI API error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to get interpretation: {str(e)}")
-
-        # Prepare and send response
-        response_data = {
-            "card_name": card,
-            "image_data": f"data:image/jpeg;base64,{img_data}",
-            "interpretation": interpretation
-        }
-        print("Response ready, sending...")
-        return response_data
 
     except Exception as e:
         print(f"Error in get_reading: {str(e)}")

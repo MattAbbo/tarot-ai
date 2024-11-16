@@ -61,6 +61,17 @@
         const { useState, useRef, useEffect } = React;
         const { Mic, Send, X, Sparkles } = lucide;
 
+        const drawingMessages = [
+            "Uncovering the right card...",
+            "Shuffling to find the truth speaker...",
+            "Seeking the perfect card for you...",
+            "Reading the energies...",
+            "Aligning with the cosmic forces...",
+            "Consulting the ancient wisdom...",
+            "Delving into the mystic deck...",
+            "Finding your destined card..."
+        ];
+
         const loadingMessages = [
             "Consulting the stars...",
             "Peering through the cosmic veil...",
@@ -84,6 +95,21 @@
             "Summoning spiritual guidance..."
         ];
 
+        const addLoadingDots = () => {
+            let dots = '';
+            return setInterval(() => {
+                dots = dots.length >= 3 ? '' : dots + '.';
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMessage = newMessages[newMessages.length - 1];
+                    if (lastMessage.type === 'ai' && lastMessage.isLoading) {
+                        lastMessage.content = lastMessage.baseContent + dots;
+                    }
+                    return newMessages;
+                });
+            }, 500);
+        };
+
         function TarotChat() {
             const [messages, setMessages] = useState([{
                 id: '1',
@@ -94,6 +120,8 @@
             const [isRecording, setIsRecording] = useState(false);
             const [recordingTime, setRecordingTime] = useState(0);
             const [isLoading, setIsLoading] = useState(false);
+            const [currentCard, setCurrentCard] = useState(null);
+            const [isWaitingForReflection, setIsWaitingForReflection] = useState(false);
 
             const mediaRecorderRef = useRef(null);
             const timerRef = useRef(null);
@@ -193,51 +221,127 @@
 
                 try {
                     setIsLoading(true);
-                    const context = input.trim();
+                    const userInput = input.trim();
                     
-                    if (context) {
+                    if (userInput) {
                         setMessages(prev => [...prev, {
                             id: Date.now().toString(),
-                            content: context,
+                            content: userInput,
                             type: 'user'
                         }]);
                     }
 
                     setInput('');
-                    setMessages(prev => {
+
+                    // If we're waiting for reflection, handle interpretation
+                    if (isWaitingForReflection && currentCard) {
                         const randomMessage = loadingMessages[Math.floor(Math.random() * loadingMessages.length)];
-                        return [...prev, {
-                            id: (Date.now() + 1).toString(),
-                            content: randomMessage,
-                            type: 'ai'
-                        }];
-                    });
-
-                    const response = await fetch('/reading', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ context }),
-                    });
-
-                    if (!response.ok) throw new Error('Reading failed');
-                    
-                    const data = await response.json();
-                    
-                    setMessages(prev => {
-                        const newMessages = [...prev];
-                        newMessages.pop(); // Remove loading message
-                        return [...newMessages, {
+                        setMessages(prev => [...prev, {
                             id: Date.now().toString(),
-                            content: data.interpretation,
-                            type: 'card',
-                            card: {
-                                name: data.card_name,
-                                image: data.image_data
-                            }
-                        }];
-                    });
+                            content: randomMessage,
+                            baseContent: randomMessage,
+                            type: 'ai',
+                            isLoading: true
+                        }]);
+
+                        const loadingInterval = addLoadingDots();
+
+                        const response = await fetch('/reading', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ 
+                                context: `${currentCard.originalContext} CARD: ${currentCard.name}`,
+                                reflection: userInput 
+                            }),
+                        });
+
+                        clearInterval(loadingInterval);
+
+                        if (!response.ok) throw new Error('Reading failed');
+                        const data = await response.json();
+                        
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            newMessages.pop(); // Remove loading message
+                            return [...newMessages, {
+                                id: Date.now().toString(),
+                                content: data.interpretation,
+                                type: 'ai'
+                            }];
+                        });
+
+                        // Wait 5 seconds, then ask if they want another reading
+                        setTimeout(() => {
+                            setMessages(prev => [...prev, {
+                                id: Date.now().toString(),
+                                content: "Would you like another reading?",
+                                type: 'ai'
+                            }]);
+                        }, 5000);
+
+                        setIsWaitingForReflection(false);
+                        setCurrentCard(null);
+
+                    } else {
+                        // First interaction - draw card with animation
+                        const drawingMessage = drawingMessages[Math.floor(Math.random() * drawingMessages.length)];
+                        setMessages(prev => [...prev, {
+                            id: Date.now().toString(),
+                            content: drawingMessage,
+                            baseContent: drawingMessage,
+                            type: 'ai',
+                            isLoading: true
+                        }]);
+
+                        const loadingInterval = addLoadingDots();
+
+                        // Artificial delay for card drawing (2 seconds)
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+
+                        const response = await fetch('/reading', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ context: userInput }),
+                        });
+
+                        clearInterval(loadingInterval);
+
+                        if (!response.ok) throw new Error('Reading failed');
+                        const data = await response.json();
+                        
+                        setCurrentCard({
+                            name: data.card_name,
+                            image: data.image_data,
+                            originalContext: userInput
+                        });
+
+                        setMessages(prev => {
+                            const newMessages = [...prev];
+                            newMessages.pop(); // Remove loading message
+                            return [...newMessages, 
+                                {
+                                    id: Date.now().toString(),
+                                    content: data.card_name,
+                                    type: 'card',
+                                    card: {
+                                        name: data.card_name,
+                                        image: data.image_data
+                                    }
+                                },
+                                {
+                                    id: (Date.now() + 1).toString(),
+                                    content: data.reflection_prompt,
+                                    type: 'ai'
+                                }
+                            ];
+                        });
+
+                        setIsWaitingForReflection(true);
+                    }
                 } catch (error) {
                     console.error('Error getting reading:', error);
                     setMessages(prev => [...prev, {
@@ -333,7 +437,7 @@
                                         <input
                                             type="text"
                                             className="w-full bg-mystic-800 border-0 rounded-lg p-3 pr-12 text-white placeholder-gray-400 focus:ring-1 focus:ring-crystal-500"
-                                            placeholder="Unveil your destiny, seeker..."
+                                            placeholder={isWaitingForReflection ? "Share your reflection..." : "Unveil your destiny, seeker..."}
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && !isLoading && handleSendMessage()}
