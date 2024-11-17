@@ -352,4 +352,33 @@ button:hover {
   opacity: 0.8;
 }
 
+:root {
+  --app-height: 100%;
+}
+
+html, body {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  height: var(--app-height);
+  overscroll-behavior: none;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fix iOS safe areas */
+@supports (padding: max(0px)) {
+  .flex-col {
+      padding-top: max(0px, env(safe-area-inset-top));
+      padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+}
+
 }
