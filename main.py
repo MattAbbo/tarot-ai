@@ -198,7 +198,7 @@ async def get_reading(request: ReadingRequest):
     try:
         print("Starting reading request with context:", request.context)
 
-        # If no reflection provided, just return the card without interpretation
+        # If no reflection provided, draw a new card
         if not request.reflection:
             card = random.choice(all_cards)
             img_data = get_card_image(card)
@@ -211,29 +211,50 @@ async def get_reading(request: ReadingRequest):
             }
         
         # If reflection is provided, generate the interpretation
-        card_name = request.context.split("CARD:")[1].strip() if "CARD:" in request.context else ""
-        
         try:
-            print("Getting interpretation from OpenAI...")
+            # Extract card name from context, with better error handling
+            if "CARD:" not in request.context:
+                print("Error: No card name found in context")
+                return {
+                    "interpretation": "I apologize, but I couldn't identify which card was drawn. Please try again."
+                }
+            
+            card_name = request.context.split("CARD:")[1].strip()
+            if not card_name:
+                print("Error: Empty card name")
+                return {
+                    "interpretation": "I apologize, but I couldn't identify which card was drawn. Please try again."
+                }
+
+            # Validate that it's a real card
+            if card_name not in all_cards:
+                print(f"Error: Invalid card name: {card_name}")
+                return {
+                    "interpretation": "I apologize, but I couldn't identify the card. Please try again."
+                }
+            
+            print(f"Interpreting card: {card_name}")
             interpretation = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{
-                "role": "system",
-                "content": """You are a knowledgeable tarot reader specializing in the Rider-Waite-Smith deck.
-                IMPORTANT: Keep total response under 1000 characters.
-                Consider both the querent's original question AND their personal reflection on the card.
-                When interpreting, reference their insights and add deeper meaning.
-                Point out max 2 often-overlooked symbolic details that relate to their situation."""
-            }, {
-                "role": "user",
-                "content": f"""Original question: {request.context.split('CARD:')[0].strip()}
-                Card drawn: {card_name}
-                Querent's reflection: {request.reflection}
-                
-                Provide an interpretation that builds on their insights and relates to their situation."""
-            }],
-            max_tokens=400
-        ).choices[0].message.content
+                model="gpt-4",
+                messages=[{
+                    "role": "system",
+                    "content": """You are a knowledgeable tarot reader specializing in the Rider-Waite-Smith deck.
+                    IMPORTANT: Keep total response under 1000 characters.
+                    Consider both the querent's original question (if provided) AND their personal reflection on the card (if provided).
+                    When interpreting, reference their insights if available and add deeper meaning.
+                    Point out max 2 often-overlooked symbolic details that relate to their situation.
+                    IMPORTANT: Only interpret the specific card that was drawn, never substitute a different card."""
+                }, {
+                    "role": "user",
+                    "content": f"""The card drawn is: {card_name}
+
+Original question: {request.context.split('CARD:')[0].strip() if "CARD:" in request.context else "No specific question"}
+Querent's reflection: {request.reflection if request.reflection else "No specific reflection provided"}
+
+Provide an interpretation for {card_name}, incorporating any insights shared."""
+                }],
+                max_tokens=400
+            ).choices[0].message.content
             print("Got interpretation from OpenAI")
 
             return {
@@ -242,11 +263,15 @@ async def get_reading(request: ReadingRequest):
 
         except Exception as e:
             print(f"OpenAI API error: {str(e)}")
-            raise HTTPException(status_code=500, detail=f"Failed to get interpretation: {str(e)}")
+            return {
+                "interpretation": "I apologize, but I couldn't complete the reading. Please try again."
+            }
 
     except Exception as e:
         print(f"Error in get_reading: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        return {
+            "interpretation": "I apologize, but I couldn't complete the reading. Please try again."
+        }
 
 if __name__ == "__main__":
     import uvicorn
