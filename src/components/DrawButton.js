@@ -14,7 +14,8 @@ window.DrawButton = function DrawButton({ onClick, disabled, state }) {
         <button
             onClick={onClick}
             disabled={disabled}
-            className={`bg-crystal-500 hover:bg-crystal-600 text-white px-6 py-2 rounded-lg font-medium transition-all
+            className={`w-full bg-crystal-500 hover:bg-crystal-600 text-white px-6 py-3 
+                rounded-lg font-medium transition-all text-center text-lg
                 ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
             {getButtonText()}

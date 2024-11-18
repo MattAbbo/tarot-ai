@@ -23,7 +23,6 @@
     <script src="/src/components/DrawButton.js" type="text/babel"></script>
     <script src="/src/components/Header.js" type="text/babel"></script>
     <script src="/src/components/MessageBubble.js" type="text/babel"></script>
-    <script src="/src/components/DrawButton.js" type="text/babel"></script>
     <script src="/src/components/InputSection.js" type="text/babel"></script>
     
     <!-- Styles -->
@@ -359,13 +358,12 @@
                     </div>
                     <div className="shrink-0 border-t border-purple-900 bg-mystic-900">
                         <div className="max-w-2xl mx-auto p-4">
-                            <div className="flex justify-center">
+                            {/* Remove the flex justify-center div and let button be full width */}
                             <DrawButton 
                                 onClick={handleMainButton}
                                 disabled={isLoading}
                                 state={currentState}
                             />
-                            </div>
                             <InputSection 
                                 value={input}
                                 onChange={setInput}
