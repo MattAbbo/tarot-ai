@@ -9,6 +9,8 @@ from dotenv import load_dotenv
 import base64
 from pydantic import BaseModel
 import tempfile
+from fastapi.staticfiles import StaticFiles
+
 
 # Load environment variables
 load_dotenv()
@@ -73,6 +75,8 @@ app.add_middleware(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/src", StaticFiles(directory="src"), name="src")  # Add this line
+
 
 # Pre-compute all card mappings
 major_arcana_map = {
