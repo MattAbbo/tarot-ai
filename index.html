@@ -317,15 +317,6 @@
                     setState('complete');  // Set state to complete after interpretation
                     setInput('');  // Clear input
 
-                    // Optional: Ask if they want another reading
-                    setTimeout(() => {
-                        setMessages(prev => [...prev, {
-                            id: Date.now().toString(),
-                            content: MESSAGES.newReading,
-                            type: 'ai'
-                        }]);
-                    }, 5000);
-
                 } catch (error) {
                     console.error('Error:', error);
                     setMessages(prev => [...prev, {
