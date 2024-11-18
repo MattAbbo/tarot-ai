@@ -10,6 +10,14 @@ window.InputSection = function InputSection({
     isRecording,
     recordingTime 
 }) {
+    // Add this effect to create icons
+    React.useEffect(() => {
+        // Check if lucide is available
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+    });
+
     const getPlaceholder = () => {
         if (state === 'reflection') {
             return "Share your reflection...";
@@ -40,7 +48,7 @@ window.InputSection = function InputSection({
                         onClick={onCancelRecording}
                         className="text-red-500 hover:text-red-600 hover:bg-mystic-700 p-2 rounded-full"
                     >
-                        <span className="block h-5 w-5">✕</span>
+                        <i data-lucide="x" className="h-5 w-5"></i>
                     </button>
                     <div className="flex-1 flex items-center gap-2">
                         <div className="flex-1 h-4 bg-mystic-700 rounded-full overflow-hidden">
@@ -54,7 +62,7 @@ window.InputSection = function InputSection({
                         onClick={onStopRecording}
                         className="text-crystal-500 hover:text-crystal-600 p-2 rounded-full"
                     >
-                        <span className="block h-3 w-3 bg-current rounded-full"></span>
+                        <i data-lucide="circle" className="h-3 w-3"></i>
                     </button>
                 </div>
             ) : (
@@ -62,30 +70,32 @@ window.InputSection = function InputSection({
                     <div className="relative flex-1">
                         <input
                             type="text"
-                            className="w-full bg-mystic-800 border-0 rounded-lg p-3 pr-12 text-white placeholder-gray-400 focus:ring-1 focus:ring-crystal-500"
+                            className="w-full bg-mystic-800 border-0 rounded-lg p-3 pr-24 text-white placeholder-gray-400 focus:ring-1 focus:ring-crystal-500"
                             placeholder={getPlaceholder()}
                             value={value}
                             onChange={(e) => onChange(e.target.value)}
                             onKeyDown={handleKeyDown}
                             disabled={isLoading}
                         />
-                        <button
-                            onClick={onStartRecording}
-                            disabled={isLoading}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 p-2"
-                        >
-                            <span className="block h-5 w-5">🎤</span>
-                        </button>
+                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            <button
+                                onClick={onStartRecording}
+                                disabled={isLoading}
+                                className="p-2 text-gray-400 hover:text-gray-300 rounded-md hover:bg-mystic-700 transition-colors"
+                            >
+                                <i data-lucide="mic" className="h-5 w-5"></i>
+                            </button>
+                            <button
+                                onClick={onSubmit}
+                                disabled={isLoading || !value.trim()}
+                                className={`p-2 rounded-md transition-colors ${
+                                    value.trim() ? 'text-crystal-500 hover:bg-mystic-700' : 'text-gray-600'
+                                }`}
+                            >
+                                <i data-lucide="send" className="h-5 w-5"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button
-                        onClick={onSubmit}
-                        disabled={isLoading}
-                        className={`p-3 rounded-lg ${
-                            isLoading ? 'bg-mystic-700' : 'bg-crystal-500 hover:bg-crystal-600'
-                        }`}
-                    >
-                        <span className="block h-4 w-4">➤</span>
-                    </button>
                 </div>
             )}
         </div>

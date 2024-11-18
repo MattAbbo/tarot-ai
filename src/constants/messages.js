@@ -1,6 +1,7 @@
 // For now using window to avoid module issues
 window.MESSAGES = {
-    welcome: "Welcome to Tarot AI.\n\nClick 'Draw Card' to begin your reading.",
+    welcome: "Welcome to Tarot AI.\n\n" + 
+             "Click 'Draw Card' to begin your reading or enter a question/thought.",
     error: "I apologize, but I couldn't complete the reading. Please try again.",
     newReading: "Would you like another reading?",
     
