@@ -239,7 +239,7 @@ async def get_reading(request: ReadingRequest):
             
             print(f"Interpreting card: {card_name}")
             interpretation = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o-mini",
                 messages=[{
                     "role": "system",
                     "content": """You are a knowledgeable tarot reader specializing in the Rider-Waite-Smith deck.
