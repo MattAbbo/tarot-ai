@@ -1,19 +1,12 @@
-// MessageBubble.js
 window.MessageBubble = function MessageBubble({ message }) {
     return (
-        <div
-            className={`flex gap-2 ${
-                message.type === 'user' ? 'justify-end' : 'justify-start'
-            }`}
-        >
-            <div
+        <div className={`flex gap-2 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div 
                 className={`rounded-lg p-4 max-w-[80%] ${
-                    message.type === 'user'
-                        ? 'bg-crystal-500'
-                        : message.type === 'card'
-                        ? 'bg-mystic-700'
-                        : 'bg-mystic-800'
+                    message.type === 'user' ? 'bg-crystal-500' : 
+                    message.type === 'card' ? 'bg-mystic-700' : 'bg-mystic-800'
                 }`}
+                style={{ overflowWrap: 'anywhere' }}
             >
                 {message.card && (
                     <div className="mb-4">
@@ -27,7 +20,7 @@ window.MessageBubble = function MessageBubble({ message }) {
                         />
                     </div>
                 )}
-                <p className="text-sm text-white whitespace-pre-line">{message.content}</p>
+                <p className="text-sm text-white whitespace-pre-wrap">{message.content}</p>
             </div>
         </div>
     );

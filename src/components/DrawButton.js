@@ -1,13 +1,7 @@
 window.DrawButton = function DrawButton({ onClick, disabled, state }) {
     const getButtonText = () => {
-        switch(state) {
-            case 'reflection':
-                return '🔮 Reveal Interpretation';
-            case 'complete':
-                return '✨ Draw New Card';
-            default:
-                return '✨ Draw Card';
-        }
+        if (state === 'reflection') return '🔮 Reveal Interpretation';
+        return '✨ Draw Card';
     };
 
     return (

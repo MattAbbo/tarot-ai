@@ -25,32 +25,33 @@ window.InputSection = function InputSection({
         }
     };
 
-    if (state === 'complete') return null;
+    // Remove this line to always show input
+    // if (state === 'complete') return null;
 
     return (
-        <div className="mt-4">
+        <div>
             <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                    <input
-                        type="text"
-                        className="w-full bg-mystic-800 border-0 rounded-lg p-3 pr-24 text-white placeholder-gray-400 focus:ring-1 focus:ring-crystal-500"
+                    <textarea
+                        className="w-full bg-mystic-800 border-0 rounded-lg p-3 text-white placeholder-gray-400 focus:ring-1 focus:ring-crystal-500 resize-none"
                         placeholder={getPlaceholder()}
                         value={value}
-                        onChange={(e) => onChange(e.target.value)}
-                        onKeyDown={handleKeyDown}
+                        onChange={(e) => {
+                            const textarea = e.target;
+                            textarea.style.height = 'auto';
+                            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+                            onChange(e.target.value);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey && !isLoading) {
+                                e.preventDefault();
+                                onSubmit();
+                                e.target.style.height = 'auto';
+                            }
+                        }}
+                        rows="1"
                         disabled={isLoading}
                     />
-                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <button
-                            onClick={onSubmit}
-                            disabled={isLoading || !value.trim()}
-                            className={`p-2 rounded-md transition-colors ${
-                                value.trim() ? 'text-crystal-500 hover:bg-mystic-700' : 'text-gray-600'
-                            }`}
-                        >
-                            <i data-lucide="send" className="h-5 w-5"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
