@@ -1,4 +1,4 @@
-const { useState } = React;
+const { useState, useRef, useEffect } = React;
 
 function TarotChat() {
     const [messages, setMessages] = useState([{
@@ -10,6 +10,25 @@ function TarotChat() {
     const [currentState, setState] = useState('initial');
     const [input, setInput] = useState('');
     const [currentCard, setCurrentCard] = useState(null);
+    const chatContainerRef = useRef(null);
+
+    const scrollToLatestMessage = () => {
+        if (chatContainerRef.current) {
+            const messagesContainer = chatContainerRef.current.querySelector('.max-w-2xl');
+            if (messagesContainer && messagesContainer.lastElementChild) {
+                messagesContainer.lastElementChild.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+        }
+    };
+
+    useEffect(() => {
+        // Add a small delay to ensure DOM is updated
+        const timeoutId = setTimeout(scrollToLatestMessage, 100);
+        return () => clearTimeout(timeoutId);
+    }, [messages]);
 
     const handleMainButton = async () => {
         switch(currentState) {
@@ -183,7 +202,7 @@ function TarotChat() {
     return (
         <div className="fixed inset-0 flex flex-col bg-mystic-900">
             <Header />
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-4" ref={chatContainerRef}>
                 <div className="max-w-2xl mx-auto space-y-4">
                     {messages.map((message) => (
                         <MessageBubble key={message.id} message={message} />
