@@ -11,42 +11,10 @@
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons - Add these two lines -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <script>lucide.createIcons();</script>
     <!-- Google Font -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
     
-    <!-- Constants -->
-    <script src="/src/constants/messages.js"></script>
-    
-    <!-- Components -->
-    <script src="/src/components/Header.js" type="text/babel"></script>
-    <script src="/src/components/MessageBubble.js" type="text/babel"></script>
-    <script src="/src/components/DrawButton.js" type="text/babel"></script>
-    <script src="/src/components/InputSection.js" type="text/babel"></script>
-    
-    <!-- Styles -->
-    <style>
-        body { 
-            background: #1a1a2e; 
-            margin: 0;
-            min-height: 100vh;
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .font-cinzel {
-            font-family: 'Cinzel', serif;
-        }
-
-        #root {
-            height: 100%;
-        }
-    </style>
-    
+    <!-- Tailwind Config -->
     <script>
         tailwind.config = {
             theme: {
@@ -67,9 +35,30 @@
         }
     </script>
 
+    <!-- Styles -->
+    <style>
+        body { 
+            background: #1a1a2e; 
+            margin: 0;
+            min-height: 100vh;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .font-cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
+        #root {
+            height: 100%;
+        }
+    </style>
+
     <!-- Main App -->
     <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
+        const { useState } = React;
     
         function TarotChat() {
             const [messages, setMessages] = useState([{
@@ -80,13 +69,7 @@
             const [isLoading, setIsLoading] = useState(false);
             const [currentState, setState] = useState('initial');
             const [input, setInput] = useState('');
-            const [isRecording, setIsRecording] = useState(false);
-            const [recordingTime, setRecordingTime] = useState(0);
             const [currentCard, setCurrentCard] = useState(null);
-    
-            const mediaRecorderRef = useRef(null);
-            const timerRef = useRef(null);
-            const audioChunksRef = useRef([]);
 
             const handleMainButton = async () => {
                 switch(currentState) {
@@ -101,83 +84,8 @@
                 }
             };
     
-            useEffect(() => {
-                if (isRecording) {
-                    timerRef.current = setInterval(() => {
-                        setRecordingTime(t => t + 1);
-                    }, 1000);
-                }
-                return () => clearInterval(timerRef.current);
-            }, [isRecording]);
-    
-            const startRecording = async () => {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    const mediaRecorder = new MediaRecorder(stream);
-                    mediaRecorderRef.current = mediaRecorder;
-                    audioChunksRef.current = [];
-    
-                    mediaRecorder.ondataavailable = (event) => {
-                        audioChunksRef.current.push(event.data);
-                    };
-    
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-                        await handleAudioTranscription(audioBlob);
-                    };
-    
-                    setIsRecording(true);
-                    setRecordingTime(0);
-                    mediaRecorder.start();
-                } catch (error) {
-                    console.error('Error accessing microphone:', error);
-                }
-            };
-    
-            const stopRecording = () => {
-                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                    mediaRecorderRef.current.stop();
-                    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-                    clearInterval(timerRef.current);
-                    setIsRecording(false);
-                }
-            };
-    
-            const cancelRecording = () => {
-                if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-                    mediaRecorderRef.current.stop();
-                    mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-                    clearInterval(timerRef.current);
-                    setIsRecording(false);
-                    audioChunksRef.current = [];
-                }
-            };
-    
-            const handleAudioTranscription = async (audioBlob) => {
-                try {
-                    setIsLoading(true);
-                    const formData = new FormData();
-                    formData.append('audio_file', audioBlob, 'recording.wav');
-    
-                    const response = await fetch('/transcribe', {
-                        method: 'POST',
-                        body: formData
-                    });
-    
-                    if (!response.ok) throw new Error('Transcription failed');
-                    
-                    const data = await response.json();
-                    setInput(data.transcription);
-                } catch (error) {
-                    console.error('Transcription error:', error);
-                } finally {
-                    setIsLoading(false);
-                }
-            };
-    
             const handleInput = async () => {
                 if (isLoading || !input.trim()) return;
-    
                 if (currentState === 'reflection') {
                     await handleRevealInterpretation();
                 } else {
@@ -303,17 +211,15 @@
                     const data = await response.json();
                     
                     setMessages(prev => {
-                        const newMessages = [...prev];
-                        // Remove loading message
-                        return newMessages.filter(m => m.content !== loadingMessage).concat({
+                        return prev.filter(m => m.content !== loadingMessage).concat({
                             id: Date.now().toString(),
                             content: data.interpretation,
                             type: 'ai'
                         });
                     });
 
-                    setState('complete');  // Set state to complete after interpretation
-                    setInput('');  // Clear input
+                    setState('complete');
+                    setInput('');
 
                 } catch (error) {
                     console.error('Error:', error);
@@ -350,7 +256,6 @@
                     </div>
                     <div className="shrink-0 border-t border-purple-900 bg-mystic-900">
                         <div className="max-w-2xl mx-auto p-4">
-                            {/* Remove the flex justify-center div and let button be full width */}
                             <DrawButton 
                                 onClick={handleMainButton}
                                 disabled={isLoading}
@@ -362,11 +267,6 @@
                                 onSubmit={handleInput}
                                 state={currentState}
                                 isLoading={isLoading}
-                                onStartRecording={startRecording}
-                                onStopRecording={stopRecording}
-                                onCancelRecording={cancelRecording}
-                                isRecording={isRecording}
-                                recordingTime={recordingTime}
                             />
                         </div>
                     </div>
@@ -377,6 +277,15 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<TarotChat />);
     </script>
+
+    <!-- Constants -->
+    <script src="/src/constants/messages.js"></script>
+    
+    <!-- Components -->
+    <script src="/src/components/Header.js" type="text/babel"></script>
+    <script src="/src/components/MessageBubble.js" type="text/babel"></script>
+    <script src="/src/components/DrawButton.js" type="text/babel"></script>
+    <script src="/src/components/InputSection.js" type="text/babel"></script>
 </head>
 <body>
     <div id="root"></div>
