@@ -1,0 +1,26 @@
+{
+  "overall_stats": {
+    "mean_score": 8.4,
+    "std_score": 0.0,
+    "total_readings": 1
+  },
+  "detailed_results": [
+    {
+      "reading": {
+        "question": "Will my new business succeed?",
+        "card_name": "The Magician",
+        "user_reflection": "I see potential and power in the card.",
+        "ai_response": "Looking at the Magician card in relation to your business question, \n            there's a strong emphasis on manifestation and utilizing your resources. The four \n            elements on the table that you haven't mentioned - the wand, cup, pentacle, and \n            sword - represent all the tools needed for success. Your observation of potential \n            and power aligns with the Magician's upward-pointing wand, suggesting your ability \n            to channel higher inspiration into practical results.",
+        "timestamp": "2024-11-20T12:32:53.889522"
+      },
+      "metrics": {
+        "personalization_score": 8,
+        "card_accuracy_score": 10,
+        "insight_depth_score": 10,
+        "overlooked_elements_score": 5,
+        "consistency_score": 9,
+        "average_score": 8.4
+      }
+    }
+  ]
+}

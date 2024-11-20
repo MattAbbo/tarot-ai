@@ -1,0 +1,43 @@
+{
+    "The Fool": {
+      "traditional_meanings": [
+        "New beginnings",
+        "Innocence",
+        "Spontaneity",
+        "Free spirit"
+      ],
+      "key_symbols": [
+        "Cliff edge",
+        "White dog",
+        "Bundle on stick",
+        "White rose",
+        "Mountains"
+      ],
+      "themes": [
+        "Taking risks",
+        "Starting fresh",
+        "Being carefree",
+        "Trusting life"
+      ]
+    },
+    "The Magician": {
+      "traditional_meanings": [
+        "Manifestation",
+        "Resourcefulness",
+        "Power",
+        "Skill"
+      ],
+      "key_symbols": [
+        "Infinity symbol",
+        "Red and white robes",
+        "Four elements on table",
+        "Raised wand"
+      ],
+      "themes": [
+        "Creating reality",
+        "Using available tools",
+        "Taking action",
+        "Channeling energy"
+      ]
+    }
+  }
