@@ -26,7 +26,7 @@ function DrawButton({ onClick, disabled, state }) {
                         onClick={() => document.getElementById('imageUpload').click()}
                         disabled={disabled}
                     >
-                        Add Image
+                        Upload Image
                     </button>
                     <input
                         type="file"
