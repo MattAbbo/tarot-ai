@@ -30,6 +30,64 @@ function TarotChat() {
         return () => clearTimeout(timeoutId);
     }, [messages]);
 
+    const handleImageUpload = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            await handleImageInterpretation(file);
+        }
+    };
+
+    const handleImageInterpretation = async (imageFile) => {
+        if (isLoading) return;
+
+        try {
+            setIsLoading(true);
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            formData.append('context', input.trim());
+
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                content: "Analyzing your image...",
+                type: 'ai'
+            }]);
+
+            const response = await fetch('/interpret-image', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error('Image interpretation failed');
+            const data = await response.json();
+
+            setMessages(prev => [
+                ...prev.filter(m => m.content !== "Analyzing your image..."),
+                {
+                    id: Date.now().toString(),
+                    content: data.image_data,
+                    type: 'image'
+                },
+                {
+                    id: (Date.now() + 1).toString(),
+                    content: data.interpretation,
+                    type: 'ai'
+                }
+            ]);
+
+            setInput('');
+            setState('complete');
+        } catch (error) {
+            console.error('Error:', error);
+            setMessages(prev => [...prev, {
+                id: Date.now().toString(),
+                content: MESSAGES.error,
+                type: 'ai'
+            }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleMainButton = async () => {
         switch(currentState) {
             case 'reflection':
@@ -196,8 +254,10 @@ function TarotChat() {
         setState('initial');
         setCurrentCard(null);
         setInput('');
-        setTimeout(() => handleDrawCard(), 0);
     };
+
+    // Expose methods for DrawButton
+    window.TarotChat.handleImageUpload = handleImageUpload;
 
     return (
         <div className="fixed inset-0 flex flex-col bg-mystic-900">

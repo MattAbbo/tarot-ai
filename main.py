@@ -75,8 +75,7 @@ app.add_middleware(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/src", StaticFiles(directory="src"), name="src")  # Add this line
-
+app.mount("/src", StaticFiles(directory="src"), name="src")
 
 # Pre-compute all card mappings
 major_arcana_map = {
@@ -195,6 +194,57 @@ async def transcribe_audio(audio_file: UploadFile = File(...)):
 
     except Exception as e:
         print(f"Error in transcribe_audio: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/interpret-image")
+async def interpret_image(image: UploadFile = File(...), context: str = ""):
+    try:
+        print("Starting image interpretation")
+        
+        # Read and encode the image
+        image_content = await image.read()
+        
+        # Convert to base64
+        encoded_image = base64.b64encode(image_content).decode()
+        
+        # Get interpretation from OpenAI Vision API
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """You are a thoughtful tarot reader. Analyze the image provided and give an intuitive reading.
+                    Focus on:
+                    - The symbolism and imagery present
+                    - The emotions and energy it evokes
+                    - How it might relate to the querent's situation
+                    Keep your response under 1000 characters and maintain a contemplative tone."""
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": f"Context: {context}\n\nWhat spiritual insights can you derive from this image?"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{encoded_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=400
+        )
+        
+        interpretation = response.choices[0].message.content
+        
+        return {
+            "interpretation": interpretation,
+            "image_data": f"data:image/jpeg;base64,{encoded_image}"
+        }
+        
+    except Exception as e:
+        print(f"Error in interpret_image: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/reading")

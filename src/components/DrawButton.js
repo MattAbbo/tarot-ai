@@ -1,18 +1,53 @@
-window.DrawButton = function DrawButton({ onClick, disabled, state }) {
+function DrawButton({ onClick, disabled, state }) {
     const getButtonText = () => {
-        if (state === 'reflection') return '🔮 Reveal Interpretation';
-        return '✨ Draw Card';
+        switch(state) {
+            case 'reflection':
+                return 'Reveal Interpretation';
+            case 'complete':
+                return 'Start New Reading';
+            default:
+                return 'Draw a Card';
+        }
     };
 
     return (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className={`w-full bg-crystal-500 hover:bg-crystal-600 text-white px-6 py-3 
-                rounded-lg transition-all text-center text-lg
-                ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-            {getButtonText()}
-        </button>
+        <div className="flex flex-col items-center space-y-4">
+            {state === 'initial' && (
+                <div className="flex justify-center space-x-4 w-full">
+                    <button
+                        className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={onClick}
+                        disabled={disabled}
+                    >
+                        {getButtonText()}
+                    </button>
+                    <button
+                        className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => document.getElementById('imageUpload').click()}
+                        disabled={disabled}
+                    >
+                        Add Image
+                    </button>
+                    <input
+                        type="file"
+                        id="imageUpload"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => window.TarotChat.handleImageUpload(e)}
+                    />
+                </div>
+            )}
+            {state !== 'initial' && (
+                <button
+                    className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={onClick}
+                    disabled={disabled}
+                >
+                    {getButtonText()}
+                </button>
+            )}
+        </div>
     );
-};
+}
+
+window.DrawButton = DrawButton;
