@@ -31,7 +31,7 @@ function DrawButton({ onClick, disabled, state }) {
                     <input
                         type="file"
                         id="imageUpload"
-                        accept="image/*"
+                        accept=".jpg,.jpeg,.png,.gif,.webp"
                         className="hidden"
                         onChange={(e) => window.TarotChat.handleImageUpload(e)}
                     />

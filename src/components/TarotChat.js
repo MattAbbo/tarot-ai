@@ -11,6 +11,7 @@ function TarotChat() {
     const [input, setInput] = useState('');
     const [currentCard, setCurrentCard] = useState(null);
     const chatContainerRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     const scrollToLatestMessage = () => {
         if (chatContainerRef.current) {
@@ -30,36 +31,72 @@ function TarotChat() {
         return () => clearTimeout(timeoutId);
     }, [messages]);
 
+    const addDebugMessage = (message, type = 'ai') => {
+        console.log('Debug:', message);
+        setMessages(prev => [...prev, {
+            id: Date.now().toString(),
+            content: message,
+            type: type
+        }]);
+    };
+
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
-        if (file) {
-            await handleImageInterpretation(file);
+        if (!file) {
+            addDebugMessage("No file selected");
+            return;
+        }
+
+        try {
+            addDebugMessage(`Processing ${file.type} file: ${file.name}`);
+
+            // Check if it's an image
+            if (!file.type.startsWith('image/')) {
+                addDebugMessage("Selected file is not an image");
+                return;
+            }
+
+            // Create a new FormData instance
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('context', input.trim());
+
+            // Process the image
+            await handleImageInterpretation(formData);
+        } catch (error) {
+            console.error('Error in handleImageUpload:', error);
+            addDebugMessage(`Error handling image: ${error.message}`);
+        } finally {
+            // Clear the input value to allow selecting the same file again
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
-    const handleImageInterpretation = async (imageFile) => {
-        if (isLoading) return;
+    const handleImageInterpretation = async (formData) => {
+        if (isLoading) {
+            addDebugMessage("System is busy, please wait");
+            return;
+        }
 
         try {
             setIsLoading(true);
-            const formData = new FormData();
-            formData.append('image', imageFile);
-            formData.append('context', input.trim());
-
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                content: "Analyzing your image...",
-                type: 'ai'
-            }]);
+            addDebugMessage("Analyzing your image...");
 
             const response = await fetch('/interpret-image', {
                 method: 'POST',
                 body: formData,
             });
 
-            if (!response.ok) throw new Error('Image interpretation failed');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`Server error: ${errorData.detail || response.statusText}`);
+            }
+
             const data = await response.json();
 
+            // Remove the "Analyzing" message and add the results
             setMessages(prev => [
                 ...prev.filter(m => m.content !== "Analyzing your image..."),
                 {
@@ -77,12 +114,8 @@ function TarotChat() {
             setInput('');
             setState('complete');
         } catch (error) {
-            console.error('Error:', error);
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                content: MESSAGES.error,
-                type: 'ai'
-            }]);
+            console.error('Error in handleImageInterpretation:', error);
+            addDebugMessage(`Failed to interpret image: ${error.message}`);
         } finally {
             setIsLoading(false);
         }
@@ -282,6 +315,7 @@ function TarotChat() {
                         onClick={handleMainButton}
                         disabled={isLoading}
                         state={currentState}
+                        fileInputRef={fileInputRef}
                     />
                 </div>
             </div>
