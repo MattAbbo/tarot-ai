@@ -1,96 +1,103 @@
 # Tarot AI
 
-A modern web application that combines tarot card readings with AI-powered interpretations.
+An AI-powered Tarot reading application that combines traditional Tarot card interpretation with modern AI technology to provide personalized readings.
+
+## Features
+
+- Interactive Tarot card readings
+- AI-powered interpretation using OpenAI's GPT models
+- Complete Tarot deck visualization
+- Chat interface for natural interaction
+- eval system for reading quality
+
+## Tech Stack
+
+### Frontend
+- React.js
+- JavaScript
+- Modern component architecture
+
+### Backend
+- Python
+- FastAPI
+- OpenAI API integration
 
 ## Project Structure
 
 ```
-project-root/
-│
-├── backend/             # Python backend
-│   ├── app.py          # Main backend file
-│   └── requirements.txt # Python dependencies
-│
-└── frontend/           # React frontend
-    ├── public/
-    │   └── index.html  # Entry point for React
-    ├── src/
-    │   ├── components/ # React components
-    │   ├── utils/      # Utility functions
-    │   ├── App.js      # Main React component
-    │   ├── index.js    # React DOM entry
-    │   └── styles.css  # Global styles
-    ├── package.json    # Dependencies and scripts
-    └── tailwind.config.js # Tailwind CSS config
+├── backend/
+│   ├── app/
+│   │   ├── constants/     # AI prompts and card definitions
+│   │   ├── models/        # Data models
+│   │   ├── routes/        # API endpoints
+│   │   └── services/      # Business logic and external services
+│   └── static/
+│       └── cards/         # Tarot card images
+├── src/
+│   ├── components/        # React components
+│   └── constants/         # Frontend constants
+└── evals/                 # Evaluation system
+    ├── src/              # Evaluation logic
+    └── results/          # Evaluation reports
 ```
 
-## Setup Instructions
+## Setup
 
-### Backend Setup
+1. Clone the repository
 
-1. Navigate to the backend directory:
+2. Install Python dependencies:
    ```bash
-   cd backend
+   poetry install
    ```
 
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Run the Flask server:
-   ```bash
-   python app.py
-   ```
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
+3. Install frontend dependencies:
    ```bash
    npm install
    ```
 
-3. Start the development server:
+4. Configure environment variables:
+   - Set up OpenAI API key
+   - Configure other required environment variables
+
+## Running the Application
+
+1. Start the backend server:
    ```bash
-   npm start
+   uvicorn backend.main:app --reload
    ```
 
-The application will be available at `http://localhost:3000`
+2. Start the frontend development server:
+   ```bash
+   npm run dev
+   ```
 
-## Features
+## Evaluation System
 
-- Interactive tarot card drawing
-- AI-powered card interpretations
-- Real-time card display
-- Responsive design
-- Custom question input
-- Modern UI with Tailwind CSS
+The project includes an evaluation system located in the `evals/` directory that:
+- Assesses the quality of Tarot readings
+- Generates analysis reports
+- Provides metrics visualization
+- Helps maintain reading consistency and accuracy
 
-## Technologies Used
+## Components
 
-- Frontend:
-  - React
-  - Tailwind CSS
-  - Axios for API calls
+### Frontend Components
+- TarotChat: Main chat interface for user interaction
+- CardDisplay: Renders Tarot card images
+- DrawButton: Handles card drawing mechanics
+- InputSection: User input handling
+- MessageBubble: Chat message display
 
-- Backend:
-  - Flask
-  - Flask-CORS
-  - Python
+### Backend Services
+- OpenAI Service: Handles AI interpretation
+- Reading Service: Core Tarot reading logic
 
 ## Development
 
-To contribute to this project:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+The application is structured to separate concerns between frontend and backend:
+- Frontend handles user interaction and display
+- Backend manages AI integration, card logic, and data processing
+- Evaluation system ensures reading quality
 
 ## License
 

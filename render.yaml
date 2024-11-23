@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: tarot-ai
+    runtime: python
+    buildCommand: cd backend && poetry install
+    startCommand: cd backend && poetry run python -m app.main
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
