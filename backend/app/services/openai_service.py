@@ -49,7 +49,7 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
     async def interpret_image(self, encoded_image: str, context: str) -> str:
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4-vision-preview",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
