@@ -17,10 +17,14 @@ function TarotChat() {
         if (chatContainerRef.current) {
             const messagesContainer = chatContainerRef.current.querySelector('.max-w-2xl');
             if (messagesContainer && messagesContainer.lastElementChild) {
-                messagesContainer.lastElementChild.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
+                const lastMessage = messages[messages.length - 1];
+                // Only scroll if the last message is not a card
+                if (lastMessage && lastMessage.type !== 'card') {
+                    messagesContainer.lastElementChild.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start' 
+                    });
+                }
             }
         }
     };
@@ -304,13 +308,15 @@ function TarotChat() {
             </div>
             <div className="shrink-0 border-t border-purple-900 bg-mystic-900">
                 <div className="max-w-2xl mx-auto p-4 space-y-4">
-                    <InputSection 
-                        value={input}
-                        onChange={setInput}
-                        onSubmit={handleInput}
-                        state={currentState}
-                        isLoading={isLoading}
-                    />
+                    {(currentState === 'initial' || currentState === 'reflection') && (
+                        <InputSection 
+                            value={input}
+                            onChange={setInput}
+                            onSubmit={handleInput}
+                            state={currentState}
+                            isLoading={isLoading}
+                        />
+                    )}
                     <DrawButton 
                         onClick={handleMainButton}
                         disabled={isLoading}
