@@ -14,10 +14,10 @@ ENV_PATH = os.path.join(BASE_DIR, ".env")
 load_dotenv(ENV_PATH)
 print(f"Loading .env from: {ENV_PATH}")
 
-# Update imports to use relative imports
-from .app.routes.reading import router as reading_router
-from .app.routes.audio import router as audio_router
-from .app.routes.image import router as image_router
+# Use absolute imports
+from app.routes.reading import router as reading_router
+from app.routes.audio import router as audio_router
+from app.routes.image import router as image_router
 
 app = FastAPI()
 
