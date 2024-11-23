@@ -17,12 +17,10 @@ async def get_reading(request: ReadingRequest):
         if not request.reflection:
             card = random.choice(ALL_CARDS)
             img_data = image_service.get_card_image(card)
-            # reflection_prompt = random.choice(REFLECTION_PROMPTS)
             
             return {
                 "card_name": card,
-                "image_data": f"data:image/jpeg;base64,{img_data}",
-                # "reflection_prompt": reflection_prompt
+                "image_data": f"data:image/jpeg;base64,{img_data}"
             }
         
         if "CARD:" not in request.context:
@@ -39,12 +37,13 @@ async def get_reading(request: ReadingRequest):
         interpretation = await openai_service.get_card_interpretation(
             card_name=card_name,
             context=request.context,
-            # reflection=request.reflection
+            reflection=request.reflection
         )
 
         return {"interpretation": interpretation}
 
     except Exception as e:
+        print(f"Error in get_reading: {str(e)}")  # Add logging for debugging
         return {
             "interpretation": "I apologize, but I couldn't complete the reading. Please try again."
         }

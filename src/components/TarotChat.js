@@ -88,7 +88,7 @@ function TarotChat() {
             setIsLoading(true);
             addDebugMessage("Analyzing your image...");
 
-            const response = await fetch('/interpret-image', {
+            const response = await fetch('/api/interpret-image', {
                 method: 'POST',
                 body: formData,
             });
@@ -174,7 +174,7 @@ function TarotChat() {
 
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            const response = await fetch('/reading', {
+            const response = await fetch('/api/reading', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -201,11 +201,6 @@ function TarotChat() {
                         name: data.card_name,
                         image: data.image_data
                     }
-                },
-                {
-                    id: (Date.now() + 1).toString(),
-                    content: data.reflection_prompt,
-                    type: 'ai'
                 }
             ]);
 
@@ -250,7 +245,7 @@ function TarotChat() {
 
             const fullContext = `${currentCard.originalContext || ''} CARD: ${currentCard.name}`;
 
-            const response = await fetch('/reading', {
+            const response = await fetch('/api/reading', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

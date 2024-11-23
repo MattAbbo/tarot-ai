@@ -7,6 +7,8 @@ from ..constants.cards import MAJOR_ARCANA_MAP, MINOR_ARCANA_MAP
 class ImageService:
     def __init__(self):
         self.card_image_cache = {}
+        # Get the path to the backend directory
+        self.backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     def get_card_image(self, card_name: str) -> str:
         """
@@ -21,7 +23,8 @@ class ImageService:
             if not filename:
                 raise ValueError(f"Invalid card name: {card_name}")
 
-            image_path = f'static/cards/{filename}'
+            # Use absolute path to the static directory inside backend
+            image_path = os.path.join(self.backend_dir, 'static', 'cards', filename)
             if not os.path.exists(image_path):
                 raise FileNotFoundError(f"Image not found: {image_path}")
 

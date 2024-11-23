@@ -3,8 +3,8 @@ window.MESSAGES = {
              "Click 'Draw Card' to begin your reading or enter a question/thought.",
              
     error: "I apologize, but I couldn't complete the reading. Please try again.",
-    // Remove this line
-    // newReading: "Would you like another reading?",
+    
+    reflection: "Take a moment to reflect on what this card means to you. Share your thoughts, or click 'Reveal Interpretation' to continue.",
     
     drawing: [
         "Shuffling the ancient deck...",

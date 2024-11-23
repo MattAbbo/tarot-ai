@@ -36,10 +36,10 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 # Mount the src directory containing React components
 app.mount("/src", StaticFiles(directory=os.path.join(ROOT_DIR, "src")), name="src")
 
-# Mount routers
-app.include_router(reading_router)
-app.include_router(audio_router)
-app.include_router(image_router)
+# Mount routers with prefixes
+app.include_router(reading_router, prefix="/api")
+app.include_router(audio_router, prefix="/api")
+app.include_router(image_router, prefix="/api")
 
 @app.get("/")
 async def read_root():

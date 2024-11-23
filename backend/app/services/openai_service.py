@@ -1,4 +1,4 @@
-# app/services/openai_service.py
+0# app/services/openai_service.py
 import os
 from openai import OpenAI
 from fastapi import HTTPException
@@ -24,10 +24,8 @@ class OpenAIService:
 
     async def get_card_interpretation(self, card_name: str, context: str, reflection: str) -> str:
         try:
-            # Removed redundant import since it's at the top
-            
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini",  # Changed model name
+                model="gpt-4o-mini",  # Fixed model name
                 messages=[{
                     "role": "system",
                     "content": TAROT_READER_PROMPT
@@ -45,16 +43,13 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
             
             return response.choices[0].message.content
         except Exception as e:
-            # Added print for debugging
             print(f"OpenAI Error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to get interpretation: {str(e)}")
 
     async def interpret_image(self, encoded_image: str, context: str) -> str:
         try:
-            # Removed redundant import since it's at the top
-            
             response = self.client.chat.completions.create(
-                model="gpt-4-vision-preview",  # Changed to vision model
+                model="gpt-4-vision-preview",
                 messages=[
                     {
                         "role": "system",
@@ -78,6 +73,5 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
             
             return response.choices[0].message.content
         except Exception as e:
-            # Added print for debugging
             print(f"OpenAI Error: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Failed to interpret image: {str(e)}")
