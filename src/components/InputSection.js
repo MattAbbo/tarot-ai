@@ -25,8 +25,7 @@ window.InputSection = function InputSection({
         }
     };
 
-    // Remove this line to always show input
-    // if (state === 'complete') return null;
+    if (state === 'complete') return null;
 
     return (
         <div>
