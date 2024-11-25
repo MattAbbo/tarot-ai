@@ -47,7 +47,7 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
             logger.debug(f"User Prompt: {user_prompt}")
 
             response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4o-mini",
                 messages=[
                     {
                         "role": "system",
