@@ -95,6 +95,14 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
 
     async def interpret_image(self, encoded_image: str, context: str) -> str:
         try:
+            # Construct the user message as a plain-text string
+            user_message = (
+                f"Context: {context}\n\n"
+                "What spiritual insights can you derive from this image?\n\n"
+                f"![Image](data:image/jpeg;base64,{encoded_image})"
+            )
+
+            # Call the OpenAI API
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
@@ -104,24 +112,17 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
                     },
                     {
                         "role": "user",
-                        "content": [
-                            {"type": "text", "text": f"Context: {context}\n\nWhat spiritual insights can you derive from this image?"},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/jpeg;base64,{encoded_image}"
-                                }
-                            }
-                        ]
+                        "content": user_message
                     }
                 ],
                 max_tokens=400
             )
+            
             return response.choices[0].message.content
 
         except Exception as e:
             logger.error(f"OpenAI Image Interpretation Error: {str(e)}")
             logger.exception("Full traceback:")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=f"Failed to interpret image: {str(e)}")
 
 openai_service = OpenAIService()
