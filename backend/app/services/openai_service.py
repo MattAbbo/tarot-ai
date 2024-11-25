@@ -1,11 +1,15 @@
+from PIL import Image
+from io import BytesIO
 import os
 import uuid
 import logging
+import base64
 from openai import OpenAI
 from fastapi import HTTPException
 from typing import Optional
 from ..constants.ai_prompts import TAROT_READER_PROMPT, IMAGE_INTERPRETER_PROMPT
 from .langfuse_service import langfuse_service
+
 
 # Set OpenAI client logging to WARNING level to suppress debug logs
 logging.getLogger("openai").setLevel(logging.WARNING)
@@ -28,6 +32,24 @@ class OpenAIService:
         
         self.client = OpenAI(api_key=api_key)
         logger.debug("OpenAI client initialized")
+        
+    def resize_and_encode_image(self, image_path: str, max_size=(500, 500)) -> str:
+        """
+        Resize the image to a maximum size and encode it as a Base64 string.
+        """
+        try:
+            logger.debug(f"Resizing image: {image_path} to max size {max_size}")
+            img = Image.open(image_path)
+            img.thumbnail(max_size)  # Resize the image
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG")  # Save as JPEG to the buffer
+            buffer.seek(0)
+            encoded_image = base64.b64encode(buffer.read()).decode("utf-8")
+            logger.debug(f"Image resized and encoded. Length of Base64 string: {len(encoded_image)}")
+            return encoded_image
+        except Exception as e:
+            logger.error(f"Failed to resize and encode image: {str(e)}")
+            raise HTTPException(status_code=500, detail="Image processing failed")
 
     async def get_card_interpretation(self, card_name: str, context: Optional[str], reflection: str) -> dict:
         session_id = str(uuid.uuid4())
@@ -95,7 +117,13 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
 
     async def interpret_image(self, encoded_image: str, context: str) -> str:
         try:
-            # Construct the user message as a plain-text string
+            """
+            Interpret an image with context by resizing it and sending it to the API.
+            """
+            # Resize and encode the image
+            encoded_image = self.resize_and_encode_image(image_path)
+
+            # Construct the user message
             user_message = (
                 f"Context: {context}\n\n"
                 "What spiritual insights can you derive from this image?\n\n"
@@ -106,18 +134,12 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {
-                        "role": "system",
-                        "content": IMAGE_INTERPRETER_PROMPT
-                    },
-                    {
-                        "role": "user",
-                        "content": user_message
-                    }
+                    {"role": "system", "content": IMAGE_INTERPRETER_PROMPT},
+                    {"role": "user", "content": user_message}
                 ],
                 max_tokens=400
             )
-            
+
             return response.choices[0].message.content
 
         except Exception as e:
