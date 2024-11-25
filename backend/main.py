@@ -21,18 +21,11 @@ ENV_PATH = BASE_DIR / ".env"
 
 # Load environment variables
 logger.info(f"Resolved ENV_PATH: {ENV_PATH}")
-if not ENV_PATH.exists() or not os.access(ENV_PATH, os.R_OK):
-    logger.critical(f"Critical Error: Cannot load .env file at {ENV_PATH}")
-    raise RuntimeError("Failed to load .env file. Check path and permissions.")
-load_dotenv(ENV_PATH)
-logger.info(f"Loading .env from: {ENV_PATH}")
-
-# Verify environment variables
-openai_key = os.getenv("OPENAI_API_KEY")
-if openai_key:
-    logger.info(f"OPENAI_API_KEY loaded successfully: {openai_key[:6]}...")
+if ENV_PATH.exists() and os.access(ENV_PATH, os.R_OK):
+    load_dotenv(ENV_PATH)
+    logger.info(f"Loaded .env from: {ENV_PATH}")
 else:
-    logger.error("OPENAI_API_KEY not loaded. Check .env file or system variables.")
+    logger.info("No .env file found, using system environment variables")
 
 # FastAPI app instance
 app = FastAPI()
