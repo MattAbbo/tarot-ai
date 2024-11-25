@@ -53,30 +53,6 @@ function TarotChat() {
         }]);
     };
 
-    const submitFeedback = async (score, feedback = '') => {
-        if (!currentSessionId) return;
-
-        try {
-            const response = await fetch('/api/feedback', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    session_id: currentSessionId,
-                    score,
-                    feedback
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to submit feedback');
-            }
-        } catch (error) {
-            console.error('Error submitting feedback:', error);
-        }
-    };
-
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file) {
@@ -195,8 +171,7 @@ function TarotChat() {
                     type: 'user'
                 }]);
             }
-
-            // Safely access MESSAGES.drawing array
+    
             const drawingMessages = MESSAGES.drawing || ["Drawing a card..."];
             const drawingMessage = drawingMessages[
                 Math.floor(Math.random() * drawingMessages.length)
@@ -207,9 +182,7 @@ function TarotChat() {
                 content: drawingMessage,
                 type: 'ai'
             }]);
-
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
+    
             const response = await fetch('/api/reading', {
                 method: 'POST',
                 headers: {
@@ -217,23 +190,29 @@ function TarotChat() {
                 },
                 body: JSON.stringify({ context: userInput }),
             });
-
+    
             if (!response.ok) throw new Error('Reading failed');
             const data = await response.json();
             
+            console.log('Debug - Before setting currentCard:', {
+                userInput,
+                cardName: data.card_name
+            });
+
+            // Store card data with originalContext
             setCurrentCard({
                 name: data.card_name,
                 image: data.image_data,
-                originalContext: userInput
+                originalContext: userInput  // Keep this name consistent
             });
-
+    
             setCurrentSessionId(data.session_id);
-
+    
             setMessages(prev => [
                 ...prev.filter(m => m.content !== drawingMessage),
                 {
                     id: Date.now().toString(),
-                    content: data.card_name,
+                    content: userInput,
                     type: 'card',
                     card: {
                         name: data.card_name,
@@ -241,9 +220,16 @@ function TarotChat() {
                     }
                 }
             ]);
-
+    
             setState('reflection');
             setInput('');
+
+            console.log('Debug - After setting currentCard:', {
+                currentCard: {
+                    name: data.card_name,
+                    originalContext: userInput
+                }
+            });
         } catch (error) {
             console.error('Error:', error);
             setMessages(prev => [...prev, {
@@ -257,8 +243,9 @@ function TarotChat() {
     };
 
     const handleRevealInterpretation = async () => {
+        console.log('Current card state:', currentCard);
         if (isLoading || !currentCard) return;
-
+    
         try {
             setIsLoading(true);
             const userReflection = input.trim();
@@ -270,8 +257,7 @@ function TarotChat() {
                     type: 'user'
                 }]);
             }
-
-            // Safely access MESSAGES.loading array
+    
             const loadingMessages = MESSAGES.loading || ["Loading..."];
             const loadingMessage = loadingMessages[
                 Math.floor(Math.random() * loadingMessages.length)
@@ -283,37 +269,46 @@ function TarotChat() {
                 type: 'ai'
             }]);
 
-            const fullContext = `${currentCard.originalContext || ''} CARD: ${currentCard.name}`;
+            // Get the last card message to use its content
+            const lastCardMessage = messages.findLast(m => m.type === 'card');
+            const context = lastCardMessage ? lastCardMessage.content : currentCard.originalContext;
 
+            console.log('Debug - Request payload:', { 
+                context: context,
+                card_name: currentCard.name,
+                reflection: userReflection || ' ',
+                session_id: currentSessionId
+            });
+    
             const response = await fetch('/api/reading', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    context: fullContext,
+                    context: context,
+                    card_name: currentCard.name,
                     reflection: userReflection || ' ',
                     session_id: currentSessionId
                 }),
             });
-
+    
             if (!response.ok) throw new Error('Reading failed');
             const data = await response.json();
+            
+            console.log('OpenAI Response:', data);
             
             setMessages(prev => {
                 return prev.filter(m => m.content !== loadingMessage).concat({
                     id: Date.now().toString(),
-                    content: data.interpretation,
+                    content: data.interpretation || "No interpretation received",
                     type: 'ai'
                 });
             });
-
-            // Submit positive feedback for successful reading
-            await submitFeedback(1);
-
+    
             setState('complete');
             setInput('');
-
+    
         } catch (error) {
             console.error('Error:', error);
             setMessages(prev => [...prev, {
@@ -321,8 +316,6 @@ function TarotChat() {
                 content: MESSAGES.error,
                 type: 'ai'
             }]);
-            // Submit negative feedback for failed reading
-            await submitFeedback(0, error.message);
         } finally {
             setIsLoading(false);
         }
