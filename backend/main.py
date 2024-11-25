@@ -16,7 +16,6 @@ print(f"Loading .env from: {ENV_PATH}")
 
 # Use absolute imports
 from app.routes.reading import router as reading_router
-from app.routes.audio import router as audio_router
 from app.routes.image import router as image_router
 
 app = FastAPI()
@@ -38,7 +37,6 @@ app.mount("/src", StaticFiles(directory=os.path.join(ROOT_DIR, "src")), name="sr
 
 # Mount routers with prefixes
 app.include_router(reading_router, prefix="/api")
-app.include_router(audio_router, prefix="/api")
 app.include_router(image_router, prefix="/api")
 
 @app.get("/")
