@@ -4,9 +4,9 @@ import os
 import uuid
 import logging
 import base64
-from openai import OpenAI
+from openai import AsyncOpenAI
 from fastapi import HTTPException
-from typing import Optional
+from typing import Optional, AsyncGenerator
 from ..constants.ai_prompts import TAROT_READER_PROMPT, IMAGE_INTERPRETER_PROMPT
 from .langfuse_service import langfuse_service
 
@@ -30,7 +30,7 @@ class OpenAIService:
         
         logger.debug(f"API Key starts with: {api_key[:7]}...")
         
-        self.client = OpenAI(api_key=api_key)
+        self.client = AsyncOpenAI(api_key=api_key)
         logger.debug("OpenAI client initialized")
         
     def resize_and_encode_image(self, image_path: str, max_size=(500, 500)) -> str:
@@ -51,7 +51,7 @@ class OpenAIService:
             logger.error(f"Failed to resize and encode image: {str(e)}")
             raise HTTPException(status_code=500, detail="Image processing failed")
 
-    async def get_card_interpretation(self, card_name: str, context: Optional[str], reflection: str) -> dict:
+    async def get_card_interpretation(self, card_name: str, context: Optional[str], reflection: str) -> AsyncGenerator[str, None]:
         session_id = str(uuid.uuid4())
         try:
             logger.debug(f"=== Getting Card Interpretation ===")
@@ -68,7 +68,7 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
 
             logger.debug(f"User Prompt: {user_prompt}")
 
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {
@@ -81,12 +81,19 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
                     }
                 ],
                 max_tokens=400,
-                temperature=0.7
+                temperature=0.7,
+                stream=True
             )
-            
-            completion = response.choices[0].message.content
-            logger.debug(f"OpenAI Response received: {completion[:100]}...")
 
+            completion_chunks = []
+            async for chunk in response:
+                if chunk.choices[0].delta.content is not None:
+                    content = chunk.choices[0].delta.content
+                    completion_chunks.append(content)
+                    yield content
+
+            # Track the full response after streaming is complete
+            completion = "".join(completion_chunks)
             await langfuse_service.track_reading(
                 session_id=session_id,
                 reading_data={
@@ -99,11 +106,6 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
                     "model": "gpt-4o-mini"
                 }
             )
-            
-            return {
-                "interpretation": completion,
-                "session_id": session_id
-            }
             
         except Exception as e:
             logger.error(f"OpenAI Error: {str(e)}")
@@ -131,13 +133,14 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
             )
 
             # Call the OpenAI API
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": IMAGE_INTERPRETER_PROMPT},
                     {"role": "user", "content": user_message}
                 ],
-                max_tokens=400
+                max_tokens=400,
+                stream=True
             )
 
             return response.choices[0].message.content

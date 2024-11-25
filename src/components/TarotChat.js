@@ -19,8 +19,10 @@ function TarotChat() {
     const [input, setInput] = useState('');
     const [currentCard, setCurrentCard] = useState(null);
     const [currentSessionId, setCurrentSessionId] = useState(null);
+    const [streamingMessageId, setStreamingMessageId] = useState(null);
     const chatContainerRef = useRef(null);
     const fileInputRef = useRef(null);
+    const eventSourceRef = useRef(null);
 
     const scrollToLatestMessage = () => {
         if (chatContainerRef.current) {
@@ -43,6 +45,15 @@ function TarotChat() {
         const timeoutId = setTimeout(scrollToLatestMessage, 100);
         return () => clearTimeout(timeoutId);
     }, [messages]);
+
+    // Cleanup EventSource on unmount
+    useEffect(() => {
+        return () => {
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+            }
+        };
+    }, []);
 
     const addDebugMessage = (message, type = 'ai') => {
         console.log('Debug:', message);
@@ -257,17 +268,6 @@ function TarotChat() {
                     type: 'user'
                 }]);
             }
-    
-            const loadingMessages = MESSAGES.loading || ["Loading..."];
-            const loadingMessage = loadingMessages[
-                Math.floor(Math.random() * loadingMessages.length)
-            ];
-            
-            setMessages(prev => [...prev, {
-                id: Date.now().toString(),
-                content: loadingMessage,
-                type: 'ai'
-            }]);
 
             // Get the last card message to use its content
             const lastCardMessage = messages.findLast(m => m.type === 'card');
@@ -279,34 +279,59 @@ function TarotChat() {
                 reflection: userReflection || ' ',
                 session_id: currentSessionId
             });
-    
-            const response = await fetch('/api/reading', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ 
-                    context: context,
-                    card_name: currentCard.name,
-                    reflection: userReflection || ' ',
-                    session_id: currentSessionId
-                }),
+
+            // Create a new message for streaming
+            const streamingId = Date.now().toString();
+            setStreamingMessageId(streamingId);
+            setMessages(prev => [...prev, {
+                id: streamingId,
+                content: '',
+                type: 'ai'
+            }]);
+
+            // Close any existing EventSource
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+            }
+
+            // Create URL with query parameters
+            const params = new URLSearchParams({
+                card_name: currentCard.name,
+                context: context,
+                reflection: userReflection || ' ',
+                session_id: currentSessionId
             });
-    
-            if (!response.ok) throw new Error('Reading failed');
-            const data = await response.json();
+
+            // Create new EventSource for streaming
+            eventSourceRef.current = new EventSource(`/api/reading/stream?${params.toString()}`);
             
-            console.log('OpenAI Response:', data);
-            
-            setMessages(prev => {
-                return prev.filter(m => m.content !== loadingMessage).concat({
-                    id: Date.now().toString(),
-                    content: data.interpretation || "No interpretation received",
-                    type: 'ai'
-                });
+            // Handle incoming messages
+            eventSourceRef.current.onmessage = (event) => {
+                setMessages(prev => prev.map(msg =>
+                    msg.id === streamingMessageId
+                        ? { ...msg, content: (msg.content || '') + event.data }
+                        : msg
+                ));
+            };
+
+            // Handle errors
+            eventSourceRef.current.onerror = (error) => {
+                console.error('EventSource failed:', error);
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+                setIsLoading(false);
+                setStreamingMessageId(null);
+            };
+
+            // Handle completion
+            eventSourceRef.current.addEventListener('error', () => {
+                eventSourceRef.current?.close();
+                eventSourceRef.current = null;
+                setIsLoading(false);
+                setStreamingMessageId(null);
+                setState('complete');
             });
-    
-            setState('complete');
+
             setInput('');
     
         } catch (error) {
@@ -316,6 +341,10 @@ function TarotChat() {
                 content: MESSAGES.error,
                 type: 'ai'
             }]);
+            if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+            }
         } finally {
             setIsLoading(false);
         }

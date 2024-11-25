@@ -3,6 +3,7 @@ import random
 import uuid
 import logging
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from ..services.openai_service import OpenAIService
 from ..services.image_service import ImageService
 from ..services.langfuse_service import langfuse_service
@@ -57,24 +58,18 @@ async def get_reading(request: ReadingRequest):
         logger.debug(f"Context: {request.context}")
         logger.debug(f"Reflection: {request.reflection}")
         
-        interpretation_response = await openai_service.get_card_interpretation(
+        # Get the streaming response generator
+        interpretation_stream = openai_service.get_card_interpretation(
             card_name=card_name,
-            context=request.context,    # This is now just the user's question
+            context=request.context,
             reflection=request.reflection
         )
         
-        logger.debug("OpenAI response received")
-        
-        interpretation = (
-            interpretation_response["interpretation"] 
-            if isinstance(interpretation_response, dict) 
-            else interpretation_response
+        # Return a streaming response
+        return StreamingResponse(
+            interpretation_stream,
+            media_type="text/event-stream"
         )
-
-        return {
-            "interpretation": interpretation,
-            "session_id": session_id
-        }
 
     except Exception as e:
         error_msg = f"Error in get_reading: {str(e)}"
