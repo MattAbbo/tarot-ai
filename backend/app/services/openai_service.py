@@ -93,62 +93,35 @@ Provide an interpretation for {card_name}, incorporating any insights shared."""
             )
             raise HTTPException(status_code=500, detail=str(e))
 
-    async def interpret_image(self, encoded_image: str, context: str) -> dict:
-        session_id = str(uuid.uuid4())
+    async def interpret_image(self, encoded_image: str, context: str) -> str:
         try:
-            logger.debug(f"=== Getting Image Interpretation ===")
-            logger.debug(f"Context: {context}")
-
-            # Construct the user prompt
-            user_prompt = f"""User's Question/Context: {context if context else "No specific question provided"}
-
-The following is an image encoded as base64:
-{encoded_image[:100]}... (truncated for brevity)
-
-Please examine the image and provide spiritual insights, taking into account the question or context provided."""
-
-            logger.debug(f"User Prompt: {user_prompt}")
-
-            # Send request to OpenAI API
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": IMAGE_INTERPRETER_PROMPT},
-                    {"role": "user", "content": user_prompt},
+                    {
+                        "role": "system",
+                        "content": IMAGE_INTERPRETER_PROMPT
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": f"Context: {context}\n\nWhat spiritual insights can you derive from this image?"},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{encoded_image}"
+                                }
+                            }
+                        ]
+                    }
                 ],
-                max_tokens=400,
-                temperature=0.7
+                max_tokens=400
             )
-
-            completion = response.choices[0].message.content
-            logger.debug(f"OpenAI Image Response received: {completion[:100]}...")
-
-            # Track the reading with the new user_prompt included
-            await langfuse_service.track_reading(
-                session_id=session_id,
-                reading_data={
-                    "context": context,
-                    "system_prompt": IMAGE_INTERPRETER_PROMPT,
-                    "user_prompt": user_prompt,
-                    "completion": completion,
-                    "model": "gpt-4o-mini",
-                    "type": "image_interpretation"
-                }
-            )
-
-            return {
-                "interpretation": completion,
-                "session_id": session_id
-            }
+            return response.choices[0].message.content
 
         except Exception as e:
             logger.error(f"OpenAI Image Interpretation Error: {str(e)}")
             logger.exception("Full traceback:")
-            await langfuse_service.track_error(
-                session_id=session_id,
-                error=str(e),
-                context="image_interpretation"
-            )
             raise HTTPException(status_code=500, detail=str(e))
 
 openai_service = OpenAIService()
