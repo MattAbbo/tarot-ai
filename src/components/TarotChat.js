@@ -1,5 +1,13 @@
 const { useState, useRef, useEffect } = React;
 
+// Ensure MESSAGES is available from window object
+const MESSAGES = window.MESSAGES || {
+    welcome: "Welcome to Tarot AI",
+    error: "An error occurred",
+    drawing: ["Drawing a card..."],
+    loading: ["Loading..."]
+};
+
 function TarotChat() {
     const [messages, setMessages] = useState([{
         id: '1',
@@ -10,6 +18,7 @@ function TarotChat() {
     const [currentState, setState] = useState('initial');
     const [input, setInput] = useState('');
     const [currentCard, setCurrentCard] = useState(null);
+    const [currentSessionId, setCurrentSessionId] = useState(null);
     const chatContainerRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -99,6 +108,7 @@ function TarotChat() {
             }
 
             const data = await response.json();
+            setCurrentSessionId(data.session_id);
 
             // Remove the "Analyzing" message and add the results
             setMessages(prev => [
@@ -161,9 +171,10 @@ function TarotChat() {
                     type: 'user'
                 }]);
             }
-
-            const drawingMessage = MESSAGES.drawing[
-                Math.floor(Math.random() * MESSAGES.drawing.length)
+    
+            const drawingMessages = MESSAGES.drawing || ["Drawing a card..."];
+            const drawingMessage = drawingMessages[
+                Math.floor(Math.random() * drawingMessages.length)
             ];
             
             setMessages(prev => [...prev, {
@@ -171,9 +182,7 @@ function TarotChat() {
                 content: drawingMessage,
                 type: 'ai'
             }]);
-
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
+    
             const response = await fetch('/api/reading', {
                 method: 'POST',
                 headers: {
@@ -181,21 +190,29 @@ function TarotChat() {
                 },
                 body: JSON.stringify({ context: userInput }),
             });
-
+    
             if (!response.ok) throw new Error('Reading failed');
             const data = await response.json();
             
+            console.log('Debug - Before setting currentCard:', {
+                userInput,
+                cardName: data.card_name
+            });
+
+            // Store card data with originalContext
             setCurrentCard({
                 name: data.card_name,
                 image: data.image_data,
-                originalContext: userInput
+                originalContext: userInput  // Keep this name consistent
             });
-
+    
+            setCurrentSessionId(data.session_id);
+    
             setMessages(prev => [
                 ...prev.filter(m => m.content !== drawingMessage),
                 {
                     id: Date.now().toString(),
-                    content: data.card_name,
+                    content: userInput,
                     type: 'card',
                     card: {
                         name: data.card_name,
@@ -203,9 +220,16 @@ function TarotChat() {
                     }
                 }
             ]);
-
+    
             setState('reflection');
             setInput('');
+
+            console.log('Debug - After setting currentCard:', {
+                currentCard: {
+                    name: data.card_name,
+                    originalContext: userInput
+                }
+            });
         } catch (error) {
             console.error('Error:', error);
             setMessages(prev => [...prev, {
@@ -219,8 +243,9 @@ function TarotChat() {
     };
 
     const handleRevealInterpretation = async () => {
+        console.log('Current card state:', currentCard);
         if (isLoading || !currentCard) return;
-
+    
         try {
             setIsLoading(true);
             const userReflection = input.trim();
@@ -232,9 +257,10 @@ function TarotChat() {
                     type: 'user'
                 }]);
             }
-
-            const loadingMessage = MESSAGES.loading[
-                Math.floor(Math.random() * MESSAGES.loading.length)
+    
+            const loadingMessages = MESSAGES.loading || ["Loading..."];
+            const loadingMessage = loadingMessages[
+                Math.floor(Math.random() * loadingMessages.length)
             ];
             
             setMessages(prev => [...prev, {
@@ -243,33 +269,46 @@ function TarotChat() {
                 type: 'ai'
             }]);
 
-            const fullContext = `${currentCard.originalContext || ''} CARD: ${currentCard.name}`;
+            // Get the last card message to use its content
+            const lastCardMessage = messages.findLast(m => m.type === 'card');
+            const context = lastCardMessage ? lastCardMessage.content : currentCard.originalContext;
 
+            console.log('Debug - Request payload:', { 
+                context: context,
+                card_name: currentCard.name,
+                reflection: userReflection || ' ',
+                session_id: currentSessionId
+            });
+    
             const response = await fetch('/api/reading', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ 
-                    context: fullContext,
-                    reflection: userReflection || ' '
+                    context: context,
+                    card_name: currentCard.name,
+                    reflection: userReflection || ' ',
+                    session_id: currentSessionId
                 }),
             });
-
+    
             if (!response.ok) throw new Error('Reading failed');
             const data = await response.json();
+            
+            console.log('OpenAI Response:', data);
             
             setMessages(prev => {
                 return prev.filter(m => m.content !== loadingMessage).concat({
                     id: Date.now().toString(),
-                    content: data.interpretation,
+                    content: data.interpretation || "No interpretation received",
                     type: 'ai'
                 });
             });
-
+    
             setState('complete');
             setInput('');
-
+    
         } catch (error) {
             console.error('Error:', error);
             setMessages(prev => [...prev, {
@@ -285,11 +324,15 @@ function TarotChat() {
     const startNewReading = () => {
         setState('initial');
         setCurrentCard(null);
+        setCurrentSessionId(null);
         setInput('');
     };
 
     // Expose methods for DrawButton
-    window.TarotChat.handleImageUpload = handleImageUpload;
+    if (typeof window !== 'undefined') {
+        window.TarotChat = window.TarotChat || {};
+        window.TarotChat.handleImageUpload = handleImageUpload;
+    }
 
     return (
         <div className="fixed inset-0 flex flex-col bg-mystic-900">
@@ -324,4 +367,7 @@ function TarotChat() {
     );
 }
 
-window.TarotChat = TarotChat;
+// Only expose to window if we're in a browser environment
+if (typeof window !== 'undefined') {
+    window.TarotChat = TarotChat;
+}
