@@ -1,5 +1,13 @@
 const { useState, useRef, useEffect } = React;
 
+// Ensure MESSAGES is available from window object
+const MESSAGES = window.MESSAGES || {
+    welcome: "Welcome to Tarot AI",
+    error: "An error occurred",
+    drawing: ["Drawing a card..."],
+    loading: ["Loading..."]
+};
+
 function TarotChat() {
     const [messages, setMessages] = useState([{
         id: '1',
@@ -10,6 +18,7 @@ function TarotChat() {
     const [currentState, setState] = useState('initial');
     const [input, setInput] = useState('');
     const [currentCard, setCurrentCard] = useState(null);
+    const [currentSessionId, setCurrentSessionId] = useState(null);
     const chatContainerRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -42,6 +51,30 @@ function TarotChat() {
             content: message,
             type: type
         }]);
+    };
+
+    const submitFeedback = async (score, feedback = '') => {
+        if (!currentSessionId) return;
+
+        try {
+            const response = await fetch('/api/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: currentSessionId,
+                    score,
+                    feedback
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to submit feedback');
+            }
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
     };
 
     const handleImageUpload = async (event) => {
@@ -99,6 +132,7 @@ function TarotChat() {
             }
 
             const data = await response.json();
+            setCurrentSessionId(data.session_id);
 
             // Remove the "Analyzing" message and add the results
             setMessages(prev => [
@@ -162,8 +196,10 @@ function TarotChat() {
                 }]);
             }
 
-            const drawingMessage = MESSAGES.drawing[
-                Math.floor(Math.random() * MESSAGES.drawing.length)
+            // Safely access MESSAGES.drawing array
+            const drawingMessages = MESSAGES.drawing || ["Drawing a card..."];
+            const drawingMessage = drawingMessages[
+                Math.floor(Math.random() * drawingMessages.length)
             ];
             
             setMessages(prev => [...prev, {
@@ -190,6 +226,8 @@ function TarotChat() {
                 image: data.image_data,
                 originalContext: userInput
             });
+
+            setCurrentSessionId(data.session_id);
 
             setMessages(prev => [
                 ...prev.filter(m => m.content !== drawingMessage),
@@ -233,8 +271,10 @@ function TarotChat() {
                 }]);
             }
 
-            const loadingMessage = MESSAGES.loading[
-                Math.floor(Math.random() * MESSAGES.loading.length)
+            // Safely access MESSAGES.loading array
+            const loadingMessages = MESSAGES.loading || ["Loading..."];
+            const loadingMessage = loadingMessages[
+                Math.floor(Math.random() * loadingMessages.length)
             ];
             
             setMessages(prev => [...prev, {
@@ -252,7 +292,8 @@ function TarotChat() {
                 },
                 body: JSON.stringify({ 
                     context: fullContext,
-                    reflection: userReflection || ' '
+                    reflection: userReflection || ' ',
+                    session_id: currentSessionId
                 }),
             });
 
@@ -267,6 +308,9 @@ function TarotChat() {
                 });
             });
 
+            // Submit positive feedback for successful reading
+            await submitFeedback(1);
+
             setState('complete');
             setInput('');
 
@@ -277,6 +321,8 @@ function TarotChat() {
                 content: MESSAGES.error,
                 type: 'ai'
             }]);
+            // Submit negative feedback for failed reading
+            await submitFeedback(0, error.message);
         } finally {
             setIsLoading(false);
         }
@@ -285,11 +331,15 @@ function TarotChat() {
     const startNewReading = () => {
         setState('initial');
         setCurrentCard(null);
+        setCurrentSessionId(null);
         setInput('');
     };
 
     // Expose methods for DrawButton
-    window.TarotChat.handleImageUpload = handleImageUpload;
+    if (typeof window !== 'undefined') {
+        window.TarotChat = window.TarotChat || {};
+        window.TarotChat.handleImageUpload = handleImageUpload;
+    }
 
     return (
         <div className="fixed inset-0 flex flex-col bg-mystic-900">
@@ -324,4 +374,7 @@ function TarotChat() {
     );
 }
 
-window.TarotChat = TarotChat;
+// Only expose to window if we're in a browser environment
+if (typeof window !== 'undefined') {
+    window.TarotChat = TarotChat;
+}

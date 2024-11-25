@@ -1,8 +1,8 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from dotenv import load_dotenv
 
 # Get the directory containing main.py
@@ -16,7 +16,6 @@ print(f"Loading .env from: {ENV_PATH}")
 
 # Use absolute imports
 from app.routes.reading import router as reading_router
-from app.routes.audio import router as audio_router
 from app.routes.image import router as image_router
 
 app = FastAPI()
@@ -30,6 +29,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Global error handler
+@app.middleware("http")
+async def catch_exceptions_middleware(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception as e:
+        print(f"Global error handler caught: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": str(e),
+                "path": request.url.path,
+                "method": request.method
+            }
+        )
+
 # Mount static files in the backend/static directory
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
@@ -38,7 +53,6 @@ app.mount("/src", StaticFiles(directory=os.path.join(ROOT_DIR, "src")), name="sr
 
 # Mount routers with prefixes
 app.include_router(reading_router, prefix="/api")
-app.include_router(audio_router, prefix="/api")
 app.include_router(image_router, prefix="/api")
 
 @app.get("/")
