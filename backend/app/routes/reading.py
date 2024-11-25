@@ -1,4 +1,4 @@
-# backend/app/routes/reading.py
+# app/routes/reading.py
 import random
 import uuid
 from fastapi import APIRouter, HTTPException
@@ -8,8 +8,10 @@ from ..services.langfuse_service import langfuse_service
 from ..models.reading import ReadingRequest
 from ..constants.cards import ALL_CARDS
 
+# Create the router instance
 router = APIRouter()
 
+# Initialize services
 openai_service = OpenAIService()
 image_service = ImageService()
 
@@ -32,7 +34,7 @@ async def get_reading(request: ReadingRequest):
         # Get card name from the current reading
         card_name = request.card_name
         if not card_name or card_name not in ALL_CARDS:
-            langfuse_service.track_error(
+            await langfuse_service.track_error(
                 session_id=session_id,
                 error=f"Invalid card name: {card_name}",
                 context="card_validation"
@@ -45,7 +47,7 @@ async def get_reading(request: ReadingRequest):
         # Get interpretation from OpenAI
         interpretation_response = await openai_service.get_card_interpretation(
             card_name=card_name,
-            context=request.context,  # This is just the question/thought
+            context=request.context,
             reflection=request.reflection
         )
         
@@ -69,7 +71,7 @@ async def get_reading(request: ReadingRequest):
 
     except Exception as e:
         print(f"Error in get_reading: {str(e)}")
-        langfuse_service.track_error(
+        await langfuse_service.track_error(
             session_id=session_id,
             error=str(e),
             context="reading_route"
@@ -82,7 +84,7 @@ async def get_reading(request: ReadingRequest):
 @router.post("/feedback")
 async def submit_feedback(feedback_data: dict):
     try:
-        langfuse_service.score_reading(
+        await langfuse_service.score_reading(
             session_id=feedback_data["session_id"],
             score=feedback_data["score"],
             feedback=feedback_data.get("feedback")

@@ -2,6 +2,8 @@
 from langfuse import Langfuse
 import os
 from typing import Dict, Any, Optional
+import asyncio
+from functools import partial
 
 class LangfuseService:
     def __init__(self):
@@ -12,23 +14,28 @@ class LangfuseService:
         )
         print("LangfuseService initialized successfully")
     
+    async def _run_sync(self, func, *args, **kwargs):
+        """Helper method to run synchronous Langfuse operations in async context"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, partial(func, *args, **kwargs))
+    
     async def track_reading(self, session_id: str, reading_data: Dict[str, Any]) -> None:
         print(f"\n--- Starting track_reading for session {session_id} ---")
         try:
             print("Creating trace...")
+            # Create trace synchronously since it's needed for subsequent operations
             trace = self.langfuse.trace(
                 id=session_id,
                 name="tarot_reading"
             )
 
-            # Generate spans but don't try to end them
+            # Run generation span creation asynchronously
             print("Creating generation span...")
-            trace.generation(
+            await self._run_sync(
+                trace.generation,
                 name="card_interpretation",
                 model=reading_data["model"],
-                model_parameters={
-                    "max_tokens": 400
-                },
+                model_parameters={"max_tokens": 400},
                 prompt=[
                     {
                         "role": "system",
@@ -42,13 +49,15 @@ class LangfuseService:
                 completion=reading_data["completion"]
             )
 
+            # Run metadata span creation asynchronously
             print("Creating metadata span...")
-            trace.span(
+            await self._run_sync(
+                trace.span,
                 name="reading_metadata",
                 input={
                     "card_name": reading_data["card_name"],
-                    "original_question": reading_data["original_question"],
-                    "has_reflection": bool(reading_data["reflection"])
+                    "original_question": reading_data.get("context"),
+                    "has_reflection": bool(reading_data.get("reflection"))
                 }
             )
 
@@ -59,6 +68,7 @@ class LangfuseService:
             print(f"Error type: {type(e)}")
             import traceback
             print(f"Traceback: {traceback.format_exc()}")
+            # Don't re-raise the exception - we want to log errors but not fail the main flow
 
     async def track_image_interpretation(self, session_id: str, interpretation_data: Dict[str, Any]) -> None:
         print(f"\n--- Starting track_image_interpretation for session {session_id} ---")
@@ -70,12 +80,11 @@ class LangfuseService:
             )
 
             print("Creating generation span...")
-            trace.generation(
+            await self._run_sync(
+                trace.generation,
                 name="image_analysis",
                 model=interpretation_data["model"],
-                model_parameters={
-                    "max_tokens": 400
-                },
+                model_parameters={"max_tokens": 400},
                 prompt=[
                     {
                         "role": "system",
@@ -93,7 +102,7 @@ class LangfuseService:
             import traceback
             print(f"Traceback: {traceback.format_exc()}")
 
-    def track_error(self, session_id: str, error: str, context: str) -> None:
+    async def track_error(self, session_id: str, error: str, context: str) -> None:
         print(f"\n--- Starting track_error for session {session_id} ---")
         try:
             print("Creating trace...")
@@ -103,7 +112,8 @@ class LangfuseService:
             )
 
             print("Creating error span...")
-            trace.span(
+            await self._run_sync(
+                trace.span,
                 name="error",
                 input={
                     "error_message": error,
@@ -123,7 +133,8 @@ class LangfuseService:
         print(f"\n--- Starting score_reading for session {session_id} ---")
         try:
             print("Submitting score...")
-            self.langfuse.score(
+            await self._run_sync(
+                self.langfuse.score,
                 name="user_satisfaction",
                 trace_id=session_id,
                 value=score,
@@ -137,4 +148,5 @@ class LangfuseService:
             import traceback
             print(f"Traceback: {traceback.format_exc()}")
 
+# Create singleton instance
 langfuse_service = LangfuseService()
