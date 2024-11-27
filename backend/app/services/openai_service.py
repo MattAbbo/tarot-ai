@@ -11,17 +11,6 @@ class OpenAIService:
             raise ValueError("OPENAI_API_KEY not found in environment variables")
         self.client = OpenAI(api_key=api_key)
 
-    async def transcribe_audio(self, audio_file) -> str:
-        try:
-            transcript = self.client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file,
-                response_format="text"
-            )
-            return transcript
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Transcription failed: {str(e)}")
-
     async def get_card_interpretation(self, card_name: str, context: str, reflection: str) -> str:
         try:
             response = self.client.chat.completions.create(
