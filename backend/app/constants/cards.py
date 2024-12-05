@@ -38,7 +38,7 @@ def generate_minor_arcana_map():
     for suit in SUITS:
         for value in NUMBERS + COURTS:
             card_name = f"{value} of {suit}"
-            filename = f"{suit}{NUMBER_MAP[value]}.jpg"
+            filename = f"{suit}{NUMBER_MAP[value]}.jpg"  # Removed hyphen to match actual filenames
             minor_arcana[card_name] = filename
     return minor_arcana
 

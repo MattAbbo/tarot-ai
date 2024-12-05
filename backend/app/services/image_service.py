@@ -1,8 +1,8 @@
-# app/services/image_service.py
+# backend/app/services/image_service.py
 import os
 import base64
 from fastapi import HTTPException
-from ..constants.cards import MAJOR_ARCANA_MAP, MINOR_ARCANA_MAP
+from backend.app.constants.cards import MAJOR_ARCANA_MAP, MINOR_ARCANA_MAP
 
 class ImageService:
     def __init__(self):

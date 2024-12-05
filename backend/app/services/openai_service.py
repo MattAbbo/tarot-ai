@@ -2,7 +2,7 @@ import os
 import logging
 from openai import OpenAI
 from fastapi import HTTPException
-from ..constants.ai_prompts import TAROT_READER_PROMPT, IMAGE_INTERPRETER_PROMPT
+from backend.app.constants.ai_prompts import TAROT_READER_PROMPT, IMAGE_INTERPRETER_PROMPT
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")

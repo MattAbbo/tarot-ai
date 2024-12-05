@@ -1,23 +1,39 @@
-# src/models.py
 from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-class ReadingRequest(BaseModel):
-    context: str = ""
-    reflection: str = ""
+# Request Models
+class DrawRequest(BaseModel):
+    question: str
 
-class UserThread(BaseModel):
-    id: str
-    device_id: str
-    created_at: datetime
-    last_active: datetime
-
-class Reading(BaseModel):
-    id: str
-    question: Optional[str]
+class InterpretationRequest(BaseModel):
     card_drawn: str
-    reflection: Optional[str]
+    question: str
+    reflection: str
+
+# Response Models
+class DrawResponse(BaseModel):
+    card_name: str
+    image_path: str
+
+class InterpretationResponse(BaseModel):
     interpretation: str
-    created_at: datetime
+
+class ThreadStats(BaseModel):
+    total_readings: int
+    last_reading_date: Optional[datetime]
+    thread_created: datetime
+
+# Database Models
+class ReadingRecord(BaseModel):
     thread_id: str
+    question: str
+    card_drawn: str
+    reflection: Optional[str] = None
+    interpretation: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat()
+        }

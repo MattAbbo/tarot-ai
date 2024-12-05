@@ -1,7 +1,7 @@
-# src/routes/image.py
+# backend/app/routes/image.py
 from fastapi import APIRouter, File, UploadFile
-from ..services.openai_service import OpenAIService
-from ..services.image_service import ImageService
+from backend.app.services.openai_service import OpenAIService
+from backend.app.services.image_service import ImageService
 
 router = APIRouter()
 openai_service = OpenAIService()

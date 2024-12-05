@@ -179,15 +179,20 @@ function TarotChat() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ context: userInput }),
+                body: JSON.stringify({ 
+                    context: userInput || ''  // Ensure we send an empty string if no input
+                }),
             });
 
             if (!response.ok) throw new Error('Reading failed');
             const data = await response.json();
             
+            // Log the response data to help debug
+            console.log('Card data received:', data);
+            
             setCurrentCard({
                 name: data.card_name,
-                image: data.image_data,
+                image: data.image_path,
                 originalContext: userInput
             });
 
@@ -195,11 +200,10 @@ function TarotChat() {
                 ...prev.filter(m => m.content !== drawingMessage),
                 {
                     id: Date.now().toString(),
-                    content: data.card_name,
                     type: 'card',
                     card: {
                         name: data.card_name,
-                        image: data.image_data
+                        image: data.image_path
                     }
                 }
             ]);
