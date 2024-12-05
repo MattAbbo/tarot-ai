@@ -5,7 +5,7 @@ description = ""
 authors = ["radicalpanda"]
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = ">=3.11,<4.0"
 fastapi = "0.115.5"
 openai = "1.54.4"
 uvicorn = "0.32.0"
@@ -14,5 +14,6 @@ fastdownload = "0.0.7"
 python-dotenv = "1.0.0"
 pydantic = "2.9.2"
 python-multipart = "^0.0.17"
+supabase = "^2.10.0"
 
 [tool.poetry.dev-dependencies]

@@ -1,18 +1,13 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from dotenv import load_dotenv
+import uuid
 
 # Get the directory containing main.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))  # Root of the project
-ENV_PATH = os.path.join(BASE_DIR, ".env")
-
-# Load environment variables with explicit path
-load_dotenv(ENV_PATH)
-print(f"Loading .env from: {ENV_PATH}")
 
 # Use absolute imports
 from app.routes.reading import router as reading_router
@@ -28,6 +23,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_device_id(request: Request, call_next):
+    # Get device_id from header or generate new one
+    device_id = request.headers.get("X-Device-ID")
+    if not device_id:
+        device_id = str(uuid.uuid4())
+    
+    # Add device_id to request state
+    request.state.device_id = device_id
+    
+    response = await call_next(request)
+    
+    # Add device_id to response header if it was newly generated
+    if not request.headers.get("X-Device-ID"):
+        response.headers["X-Device-ID"] = device_id
+    
+    return response
 
 # Mount static files in the backend/static directory
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
